@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$DEV_MODE" == "true" ]; then
+    exec python3.11 -m uvicorn api:api --reload --port 80 --host 0.0.0.0 --reload-exclude '*.log' --log-level debug --access-log
+else
+    exec uvicorn api:api --port 80 --host 0.0.0.0
+fi

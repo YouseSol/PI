@@ -1,0 +1,8 @@
+fastapi[standard]==0.115.0
+redis==5.2.1
+psycopg2==2.9.9
+PyYAML==6.0
+werkzeug>=2.0.0
+crewai==0.95.0
+celery==5.4.0
+openpyxl==3.1.5
