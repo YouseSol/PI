@@ -5,7 +5,8 @@ import pydantic
 
 from api.APIConfig import APIConfig
 
-from api.ai.Agency import OutboundSales
+from api.ai.OutboundSalesAgency import OutboundSalesAgency
+from api.ai.ValidationAgency import ValidationAgency
 from api.exception.APIException import APIException
 
 from api.thirdparty.UnipileService import UnipileService
@@ -54,14 +55,16 @@ async def answer_chat(chat: AnswerChatModel):
         for message in messages_compiled
     ]
 
-    outbound_sales_crew = OutboundSales(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
+    outbound_sales_crew = OutboundSalesAgency(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
+    outbound_sales_output = outbound_sales_crew.kickoff().raw
 
-    crew_output = outbound_sales_crew.kickoff()
+    logger.debug(f"Outbound Sales Message Generated: {outbound_sales_output}")
 
-    # TODO: Implement AI.
+    validation_crew = ValidationAgency(lead=chat.lead, message=outbound_sales_output).crew()
+    validation_output = validation_crew.kickoff().raw
 
-    message = crew_output.raw
+    logger.debug(f"Validation Message Generated: {validation_output}")
 
-    logger.debug(f"Message Generated: {crew_output.raw}")
+    message = validation_output
 
     unipile.send_message(chat_id=chat.chat_id, text=message)
