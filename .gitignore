@@ -1,2 +1,5 @@
 runtime.d/
 __pycache__/
+ignore/
+
+venv/

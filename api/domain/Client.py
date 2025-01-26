@@ -1,6 +1,5 @@
 import pydantic
 
-
 class LoginForm(pydantic.BaseModel):
     email: str
     password: str
@@ -17,6 +16,7 @@ class Client(UserInfo):
     email: str
     active: bool
     token: str
+    standart_message: str | None
 
 class SystemClient(Client):
     hash: str
