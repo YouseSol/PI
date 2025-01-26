@@ -31,7 +31,7 @@ router = fastapi.APIRouter(prefix="/alessia", tags=[ "Alessia" ])
 async def activate_leads(file: fastapi.UploadFile,
                          pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
                          background_tasks: fastapi.BackgroundTasks):
-    _bytes = file.file.read();
+    _bytes = file.file.read()
 
     validate_campaing_file(_bytes)
 
@@ -41,7 +41,7 @@ async def activate_leads(file: fastapi.UploadFile,
 async def deactivate_leads(file: fastapi.UploadFile,
                            pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
                            background_tasks: fastapi.BackgroundTasks):
-    _bytes = file.file.read();
+    _bytes = file.file.read()
 
     validate_campaing_file(_bytes)
 

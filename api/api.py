@@ -13,6 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import fastapi
+import fastapi.middleware.cors
 
 from api.APIConfig import APIConfig
 
@@ -36,6 +37,16 @@ logger = logging.getLogger(__name__)
 api = fastapi.FastAPI(title=APIConfig.get("Name"),
                       root_path="/api",
                       version="0.1.1")
+
+origins = APIConfig.get("CORS")
+
+api.add_middleware(
+    fastapi.middleware.cors.CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def sent_email(subject: str, body: str, to: str):
     from_email = APIConfig.get("Support")['Contact']['Sender']['User']
@@ -86,4 +97,5 @@ api.include_router(lead.router, dependencies=[ fastapi.Depends(dependencies.has_
 api.include_router(alessia.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(linkedin.router)
 
+api.include_router(linkedin.router)
 api.include_router(linkedin_wh.router)
