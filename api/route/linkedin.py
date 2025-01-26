@@ -38,7 +38,7 @@ async def answer_chat(chat: AnswerChatModel):
     ]
 
     if len(messages_in_chat) == 0:
-        raise APIException("Asked to generate anwser to empty chat.")
+        raise APIException("Asked to generate anwser to empty chat.", context=chat.model_dump())
 
     messages_compiled = [ messages_in_chat[0] ]
     remaining_messages = messages_in_chat[1::]
@@ -53,12 +53,6 @@ async def answer_chat(chat: AnswerChatModel):
         { "role": "Cliente" if message["role"] == "lead" else "Prospector", "content": message["content"] }
         for message in messages_compiled
     ]
-
-    conversational_input = dict(
-        chat_history=chat_history,
-        client=chat.client,
-        lead=chat.lead
-    )
 
     outbound_sales_crew = OutboundSales(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
 

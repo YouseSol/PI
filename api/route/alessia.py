@@ -57,7 +57,8 @@ async def activate_leads(file: fastapi.UploadFile, pi_api_token: t.Annotated[pyd
                     emails=lead_linkedin_profile["emails"],
                     phones=lead_linkedin_profile["phones"],
                     active=True,
-                    deleted=False)
+                    deleted=False,
+                    chat_id=None)
 
         LeadController.save(lead)
 

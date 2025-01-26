@@ -28,7 +28,11 @@ CREATE TABLE IF NOT EXISTS PI.Client(
 
 CREATE TABLE IF NOT EXISTS PI.Lead(
     owner                      PI.EMAIL_TYPE NOT NULL,
+
+    id                         SERIAL        UNIQUE,
+
     linkedin_public_identifier VARCHAR       NOT NULL,
+    chat_id                    VARCHAR           NULL,
 
     first_name                 VARCHAR       NOT NULL,
     last_name                  VARCHAR       NOT NULL,

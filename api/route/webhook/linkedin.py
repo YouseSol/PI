@@ -170,15 +170,19 @@ def on_linkedin_message_event_from_unipile(event: dict):
     if not LeadController.is_a_valid_lead(owner=client.email, linkedin_public_identifier=lead_linkedin_public_identifier):
         return
 
-    logger.debug(event)
-
     lead = LeadController.get_by_owner_and_linkedin_public_identifier(
         owner=client.email,
         linkedin_public_identifier=lead_linkedin_public_identifier
     )
 
-    if not lead.deleted and lead.active:
+    lead.chat_id = event["chat_id"]
+
+    LeadController.save(lead=lead)
+
+    if lead.active:
         mark_chat_to_be_answered(client=client, lead=lead, chat_id=event["chat_id"], datetime=event["datetime"])
+
+    Controller.save()
 
 def extract_data_from_unipile_message_event(event: dict) -> dict:
     extraction = dict()
@@ -274,7 +278,3 @@ def mark_chat_to_be_answered(client: Client, lead: Lead, chat_id: str, datetime:
 
     if not redis_db.set(key, json.dumps(value)):
         raise APIException(f"Failed to add task into redis. Key: {key}", context=value)
-
-"""
-POST /linkedin/answer-chat Client Lead chat_id
-"""
