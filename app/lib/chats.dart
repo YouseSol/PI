@@ -34,40 +34,10 @@ class _ChatsPageState extends State<ChatsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Load more leads when finished scrolling.
-    return FutureBuilder<List<Lead>>(
-      future: widget.apiClient.fetchLeads(50, 0),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Expanded(child: Column(children: [
-            Spacer(flex: 99),
-            CircularProgressIndicator(),
-            Spacer(flex: 2),
-            Text("Buscando conversas."),
-            Spacer(flex: 99),
-          ]));
-        } else {
-          final leads = snapshot.data!;
-
-          if (leads.isEmpty) {
-            return const Center(child: Text("Nada para mostrar aqui."));
-          }
-
-          return  Expanded(child: Row(children: [
-            Expanded(
-              flex: 2,
-              child: Center(
-                child: AvailableChats(
-                  apiClient: widget.apiClient,
-                  onLeadSelected: (l) => leadSelectionNotifier.setLead(l)
-                )
-              )
-            ),
-            Expanded(flex: 10, child: Center(child: ChatHistory(apiClient: widget.apiClient, leadSelectionNotifier: leadSelectionNotifier))),
-          ]));
-        }
-      }
-    );
+    return  Expanded(child: Row(children: [
+      Expanded(flex: 2, child: Center(child: AvailableChats(apiClient: widget.apiClient, onLeadSelected: leadSelectionNotifier.setLead))),
+      Expanded(flex: 10, child: Center(child: ChatHistory(apiClient: widget.apiClient, leadSelectionNotifier: leadSelectionNotifier))),
+    ]));
   }
 }
 
@@ -87,6 +57,7 @@ class _AvailableChats extends State<AvailableChats> {
   Lead? selectedLead;
 
   bool hasTriedLoading = false;
+  bool isLoading = false;
 
   int pageSize = 50;
   int page = 0;
@@ -105,11 +76,27 @@ class _AvailableChats extends State<AvailableChats> {
   }
 
   void loadMore() {
-    widget.apiClient.fetchLeads(pageSize, page).then((leads_) {
+    if (isLoading) {
+      return;
+    }
+
+    isLoading = true;
+
+    widget.apiClient.fetchLeads(pageSize, page).then((leads_) async {
+      leads.addAll(leads_);
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
-        leads.addAll(leads_);
-        page = page + 1;
+        if (leads_.length >= pageSize) {
+          page = page + 1;
+        }
         hasTriedLoading = true;
+        isLoading = false;
       });
     });
   }
@@ -148,7 +135,6 @@ class ChatHistory extends StatefulWidget {
 }
 
 class _ChatHistory extends State<ChatHistory> {
-
 
   @override
   Widget build(BuildContext context) {

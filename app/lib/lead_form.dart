@@ -38,8 +38,6 @@ class _LeadForm extends State<LeadForm> {
 
   @override
   Widget build(BuildContext context) {
-    inspect(widget.lead);
-
     final firstNameFormField = TextFormField(
       controller: firstNameController,
       decoration: const InputDecoration(border: OutlineInputBorder(),

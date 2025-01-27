@@ -40,6 +40,10 @@ class PIApp extends StatelessWidget {
         dialogTheme: const DialogTheme(
           iconColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(2.0)))
+        ),
+        scrollbarTheme: const ScrollbarThemeData(
+          trackVisibility: WidgetStatePropertyAll<bool>(true),
+          thumbVisibility: WidgetStatePropertyAll<bool>(true)
         )
       ),
       home: const HomePage(title: 'PI - Início'),
@@ -76,6 +80,9 @@ class _HomePageState extends State<HomePage> {
                  passwordController.clear();
                }),
                onError: (_) {
+                 emailController.clear();
+                 passwordController.clear();
+
                  if (!context.mounted) {
                    return;
                  }
@@ -95,9 +102,13 @@ class _HomePageState extends State<HomePage> {
     showDialog(context: context, builder: (context) {
       return AlertDialog(
         icon: const Icon(Icons.info),
-        iconColor: Colors.red,
         title: const Text("Deseja mesmo sair?"),
-        actions: [ TextButton(onPressed: logoutImpl, child: const Text("Confirmar")) ],
+        actions: [
+          TextButton(onPressed: logoutImpl, child: const Text("Confirmar")),
+          TextButton(onPressed: () {
+            Navigator.of(context).pop();
+          }, child: const Text("Cancelar"))
+        ],
       );
     });
   }
@@ -218,10 +229,13 @@ class _HomePageState extends State<HomePage> {
   Widget buildMainContent() {
     switch (selectedSidebarItem) {
       case "Home":
-        return const Expanded(child: Center(child: Column(
+        return Expanded(child: Center(child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Por favor, selecione uma funcionalidade à esquerda.'),
+            TextButton(
+              onPressed: flipAccountStatus,
+              child: Text("${apiClient.user!.active ? 'Desativar': 'Ativar'} conta")
+            )
           ],
         )));
 
@@ -240,5 +254,9 @@ class _HomePageState extends State<HomePage> {
           children: [ Text('Error') ],
         )));
     }
+  }
+
+  void flipAccountStatus() {
+
   }
 }

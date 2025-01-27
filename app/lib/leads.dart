@@ -95,7 +95,6 @@ class _LeadsPageState extends State<LeadsPage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           rows = [];
         } else {
-          inspect(snapshot.data);
           final leads = snapshot.data!;
           rows= leads.map(buildDataRow).toList();
         }
@@ -150,7 +149,11 @@ class _LeadsPageState extends State<LeadsPage> {
                 barrierDismissible: false,
                 context: context,
                 builder: (context) => DeleteLeadDialog(onDelete: () => widget.apiClient.deleteLead(l))
-              ).then((value) => setState(() => ()));
+              ).then((value) {
+                if (value as bool) {
+                  setState(() => ());
+                }
+              });
             },
           ),
           const Spacer(flex: 150)
@@ -178,7 +181,7 @@ class _DeleteLeadDialogState extends State<DeleteLeadDialog> {
     await widget.onDelete();
 
     if (context.mounted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -196,7 +199,7 @@ class _DeleteLeadDialogState extends State<DeleteLeadDialog> {
             onPressed: _handleDelete,
             child: const Text("Confirmar"),
           ),
-        if (!isLoading) TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text("Cancelar")),
+        if (!isLoading) TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Cancelar")),
       ],
     );
   }
