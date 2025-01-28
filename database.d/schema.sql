@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS PI.Client(
 
     first_name          VARCHAR       NOT NULL,
     last_name           VARCHAR       NOT NULL,
+    standart_message    VARCHAR       NOT NULL,
 
     linkedin_account_id VARCHAR       NOT NULL UNIQUE,
 
