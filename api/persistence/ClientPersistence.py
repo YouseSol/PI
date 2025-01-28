@@ -70,6 +70,16 @@ class ClientPersistence(object):
                 return SystemClient.model_validate(dict(data))
 
     @classmethod
+    def set_active(cls, api_token: pydantic.UUID4, active: bool) -> None:
+        db = get_postgres_db()
+
+        with db.cursor() as cursor:
+            cursor.execute(
+                "UPDATE PI.Client SET active = %s WHERE token = %s AND deleted = false",
+                (active, api_token)
+            )
+
+    @classmethod
     def is_api_token_valid(cls, api_token: pydantic.UUID4) -> bool:
         db = get_postgres_db()
 

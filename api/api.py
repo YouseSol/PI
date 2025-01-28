@@ -13,7 +13,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import fastapi
-import fastapi.middleware.cors
 
 from api.APIConfig import APIConfig
 
@@ -22,6 +21,7 @@ from api.controller.Controller import Controller
 from api.route import dependencies
 
 from api.route import auth
+from api.route import user
 from api.route import linkedin
 from api.route import alessia
 from api.route import lead
@@ -36,16 +36,6 @@ logger = logging.getLogger(__name__)
 api = fastapi.FastAPI(title=APIConfig.get("Name"),
                       root_path="/api",
                       version="0.1.1")
-
-origins = APIConfig.get("CORS")
-
-api.add_middleware(
-    fastapi.middleware.cors.CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 def sent_email(subject: str, body: str, to: str):
     from_email = APIConfig.get("Support")['Contact']['Sender']['User']
@@ -91,9 +81,9 @@ def ping() -> dict:
 
 api.include_router(auth.router)
 
+api.include_router(user.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(lead.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
-
 api.include_router(alessia.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
-
 api.include_router(linkedin.router)
+
 api.include_router(linkedin_wh.router)

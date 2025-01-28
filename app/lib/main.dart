@@ -257,6 +257,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   void flipAccountStatus() {
+    String message = apiClient.user!.active ? 'DESATIVAR': 'ATIVAR';
 
+    showDialog(barrierDismissible: false, context: context, builder: (context) {
+      return AlertDialog(
+        icon: const Icon(Icons.info),
+        title: Text("Deseja mesmo $message a sua conta?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+                if (apiClient.user!.active) {
+                  apiClient.deactivateAccount().then((value) => Navigator.of(context).pop(true));
+                } else {
+                  apiClient.activateAccount().then((value) => Navigator.of(context).pop(true));
+                }
+
+                inspect(apiClient.user);
+            },
+            child: const Text("Confirmar")
+          ),
+          TextButton(onPressed: () {
+            Navigator.of(context).pop(false);
+          }, child: const Text("Cancelar"))
+        ],
+      );
+    }).then((value) {
+      if (value as bool) {
+        setState(() => ());
+      }
+    });
   }
 }

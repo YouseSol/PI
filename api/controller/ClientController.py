@@ -34,3 +34,7 @@ class ClientController(object):
     @classmethod
     def get_by_api_token(cls, api_token: pydantic.UUID4) -> SystemClient:
         return ClientPersistence.get_by_api_token(api_token=api_token)
+
+    @classmethod
+    def set_active(cls, api_token: pydantic.UUID4, active: bool):
+        ClientPersistence.set_active(api_token=api_token, active=active)

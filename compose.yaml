@@ -30,8 +30,8 @@ services:
       context: .
       dockerfile: ./dockerfiles/app.Dockerfile
 
-    ports:
-      - 36651:36651
+    environment:
+      API_URL_FROM_UI: $API_URL_FROM_UI
 
     restart: always
 

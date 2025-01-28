@@ -26,7 +26,7 @@ class User {
 }
 
 class PIClient {
-  final baseURI = 'http://localhost:8080/api';
+  final baseURI = const String.fromEnvironment("API_URL_FROM_UI", defaultValue: 'http://localhost:8080/api');
 
   User? user;
 
@@ -59,5 +59,41 @@ class PIClient {
 
   bool isAuthenticated() {
     return user != null;
+  }
+
+  Future<void> activateAccount() async {
+    final response = await http.post(
+      Uri.parse('$baseURI/user/activate'),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'pi-api-token': user!.token
+      }
+    );
+
+    if (response.statusCode > 299) {
+      throw Exception("Failed to activate account");
+    }
+
+    user = User.fromMap(jsonDecode(response.body));
+
+    return Future.value();
+  }
+
+  Future<void> deactivateAccount() async {
+    final response = await http.post(
+      Uri.parse('$baseURI/user/deactivate'),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'pi-api-token': user!.token
+      }
+    );
+
+    if (response.statusCode > 299) {
+      throw Exception("Failed to deactivate account");
+    }
+
+    user = User.fromMap(jsonDecode(response.body));
+
+    return Future.value();
   }
 }
