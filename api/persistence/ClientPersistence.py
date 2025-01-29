@@ -31,13 +31,14 @@ class ClientPersistence(object):
                             email,
                             first_name,
                             last_name,
+                            standart_message,
                             linkedin_account_id,
                             hash
                         )
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s)
                         RETURNING *;
                     ''',
-                    (form.email, form.first_name, form.last_name, form.linkedin_account_id, generate_password_hash(form.password))
+                    (form.email, form.first_name, form.last_name, form.standart_message, form.linkedin_account_id, generate_password_hash(form.password))
                 )
 
                 data: dict = cursor.fetchone()

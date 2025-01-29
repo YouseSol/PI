@@ -46,7 +46,10 @@ async def answer_chat(chat: AnswerChatModel):
 
     for message in remaining_messages:
         if message["role"] == messages_compiled[-1]["role"]:
-            messages_compiled[-1]["content"] = message["content"] + ". " + messages_compiled[-1]["content"]
+            content_message = message['content'] if message["content"] is not None else ""
+            content_last_message = messages_compiled[-1]['content'] if messages_compiled[-1]["content"] is not None else ""
+
+            messages_compiled[-1]["content"] = content_message + ". " + content_last_message
         else:
             messages_compiled.append(message)
 

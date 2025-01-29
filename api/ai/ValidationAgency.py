@@ -96,8 +96,8 @@ class ValidationAgency:
         agents = [
             self.output_format_validator(),
             self.placeholder_validator(),
-            self.name_validator(),
-            self.gender_validator(),
+            # self.name_validator(),
+            # self.gender_validator(),
         ]
 
         tasks = [

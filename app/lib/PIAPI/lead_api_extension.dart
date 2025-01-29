@@ -13,7 +13,7 @@ extension LeadAPIExtension on PIClient {
 
   Future<List<Lead>> fetchLeads(int pageSize, int page) async {
     final response = await http.get(
-      Uri.parse('$baseURI/lead?page_size=$pageSize&page=$page'),
+      Uri.parse('${baseURI}lead?page_size=$pageSize&page=$page'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token
@@ -31,7 +31,7 @@ extension LeadAPIExtension on PIClient {
 
   Future<void> deleteLead(Lead l) async {
     final response = await http.delete(
-      Uri.parse('$baseURI/lead'),
+      Uri.parse('${baseURI}lead'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token
@@ -48,7 +48,7 @@ extension LeadAPIExtension on PIClient {
 
   Future<Lead> saveLead(Lead l) async {
     final response = await http.post(
-      Uri.parse('$baseURI/lead'),
+      Uri.parse('${baseURI}lead'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token
@@ -65,7 +65,7 @@ extension LeadAPIExtension on PIClient {
 
   Future<List<Map>> fetchChatHistory(Lead l) async {
     final response = await http.get(
-      Uri.parse('$baseURI/lead/${l.id}/chat'),
+      Uri.parse('${baseURI}lead/${l.id}/chat'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token

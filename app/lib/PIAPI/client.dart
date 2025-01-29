@@ -26,7 +26,8 @@ class User {
 }
 
 class PIClient {
-  final baseURI = const String.fromEnvironment("API_URL_FROM_UI", defaultValue: 'http://localhost:8080/api');
+  // final baseURI = const String.fromEnvironment("API_URL_FROM_UI", defaultValue: 'http://localhost:8080/api');
+  final baseURI = Uri.base.origin + '/api/';
 
   User? user;
 
@@ -34,7 +35,7 @@ class PIClient {
 
   Future<void> login({ required String email, required String password }) async {
     final response = await http.post(
-      Uri.parse('$baseURI/auth/login'),
+      Uri.parse('${baseURI}auth/login'),
       body: jsonEncode({
         "email": email,
         "password": password
@@ -63,7 +64,7 @@ class PIClient {
 
   Future<void> activateAccount() async {
     final response = await http.post(
-      Uri.parse('$baseURI/user/activate'),
+      Uri.parse('${baseURI}user/activate'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token
@@ -81,7 +82,7 @@ class PIClient {
 
   Future<void> deactivateAccount() async {
     final response = await http.post(
-      Uri.parse('$baseURI/user/deactivate'),
+      Uri.parse('${baseURI}user/deactivate'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token

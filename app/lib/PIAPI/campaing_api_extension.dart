@@ -13,7 +13,7 @@ extension CampaignAPIExtension on PIClient {
     await Future.delayed(const Duration(seconds: 3));
 
     final response = await http.get(
-      Uri.parse('$baseURI/alessia/campaign-status'),
+      Uri.parse('${baseURI}alessia/campaign-status'),
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'pi-api-token': user!.token
@@ -28,7 +28,7 @@ extension CampaignAPIExtension on PIClient {
   }
 
   void uploadCampaign(List<int> fileBytes) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseURI/alessia/activate-leads'));
+    final request = http.MultipartRequest('POST', Uri.parse('${baseURI}alessia/activate-leads'));
 
     request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: 'uploaded_file'));
 

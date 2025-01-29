@@ -2,7 +2,7 @@
 
 ## Development Mode
 ```bash
-$ docker compose --env-file ./runtime.d/up.env -p pi_dev -f compose.yaml up --build
+$ docker compose --env-file ./runtime.d/up-dev.env -p pi_dev -f compose.yaml up --build
 ```
 
 ## Production Mode - Not Finished Yet
