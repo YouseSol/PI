@@ -1,0 +1,33 @@
+name: CD Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - CI Pipeline
+    types:
+      - completed
+    branches:
+      - main
+  
+jobs:
+  CD-PIPELINE:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Hostinger
+        uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+        with:
+          host: ${{secrets.HOSTINGER_IP}}
+          user: ${{secrets.HOSTINGER_USER}}
+          pass: ${{secrets.HOSTINGER_PASSWORD}}
+          first_ssh: |
+            cd PI
+            eval "$(ssh-agent -s)"
+            ssh-add ~/.ssh/pi
+            git stash
+            git pull
+            docker compose --env-file ./runtime.d/up-prod.env -p pi_prod -f compose.yaml up --build

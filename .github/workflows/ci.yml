@@ -1,0 +1,16 @@
+name: CI Pipeline
+
+on:
+  push:
+
+jobs:
+  CI-PIPELINE:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Tests
+        run: |
+          echo "Tests to be implemented"
