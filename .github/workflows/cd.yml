@@ -30,4 +30,4 @@ jobs:
             ssh-add ~/.ssh/pi
             git stash
             git pull
-            docker compose --env-file ./runtime.d/up-prod.env -p pi_prod -f compose.yaml up --build
+            docker compose --env-file ./runtime.d/up.env -p pi_prod -f compose.yaml up --build
