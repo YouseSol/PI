@@ -128,7 +128,7 @@ services:
       REDIS_PASSWORD: $REDIS_PASSWORD
 
     volumes:
-      - redis-data:/redis/storage
+      - redis-data:/data
 
     ports:
       - 6379:6379

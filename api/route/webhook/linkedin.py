@@ -14,6 +14,7 @@ from api.controller.LeadController import LeadController
 
 from api.exception.APIException import APIException
 from api.exception.DuplicatingObjectException import DuplicatingObjectException
+from api.exception.InexistentObjectException import InexistentObjectException
 from api.exception.ThirdPartyError import ThirdPartyError
 
 from api.thirdparty.UnipileService import UnipileService
@@ -148,7 +149,11 @@ def on_linkedin_message_event_from_unipile(event: dict):
 
     logger.debug(event)
 
-    client = ClientController.get_by_linkedin_account_id(linkedin_account_id=event["account_id"])
+    try:
+        client = ClientController.get_by_linkedin_account_id(linkedin_account_id=event["account_id"])
+    except InexistentObjectException:
+        logger.warn(f"Recieving Unipile message event from unkown Client: '{event['account_id']}'.")
+        return
 
     if not client.active:
         logger.warn(f"Recieving Unipile message event from inactive Client: '{client.email}'.")
@@ -264,7 +269,7 @@ def extract_data_from_unipile_message_event(event: dict) -> dict:
 def mark_chat_to_be_answered(client: Client, lead: Lead, chat_id: str, datetime: dt.datetime):
     redis_db = get_redis_db()
 
-    key = f"TASK_TRIGGER_CHAT_ANSWER-{client.email}-{lead.linkedin_public_identifier}-{chat_id}"
+    key = f"TASK_TRIGGER_CHAT_ANSWER-{client.email}-{lead.linkedin_public_identifier}-{lead.id}"
 
     task_str: str | None = redis_db.get(key)
 
@@ -274,7 +279,7 @@ def mark_chat_to_be_answered(client: Client, lead: Lead, chat_id: str, datetime:
         if datetime.timestamp() < task["timestamp"]:
             return
 
-    value = dict(client=client.model_dump(), lead=lead.model_dump(), chat_id=chat_id, timestamp=datetime.timestamp())
+    value = dict(client=client.model_dump(), lead=lead.model_dump(), timestamp=datetime.timestamp())
 
     if not redis_db.set(key, json.dumps(value)):
         raise APIException(f"Failed to add task into redis. Key: {key}", context=value)

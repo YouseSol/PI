@@ -22,10 +22,12 @@ router = fastapi.APIRouter(prefix="/linkedin", tags=[ "Linkedin" ])
 class AnswerChatModel(pydantic.BaseModel):
     client: Client
     lead: Lead
-    chat_id: str
 
 @router.post("/answer-chat")
 async def answer_chat(chat: AnswerChatModel):
+    if chat.lead.chat_id is None:
+        raise APIException("Received an chat to answer without the 'chat_id' attribute.")
+
     unipile_cfg: dict = APIConfig.get("Unipile")
 
     unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
@@ -35,7 +37,7 @@ async def answer_chat(chat: AnswerChatModel):
     messages_in_chat = [
         dict(role="lead" if message["sender_id"] == chat.lead.linkedin_public_identifier else "agent",
              content=message["text"])
-        for message in unipile.retrieve_chat_messages(chat_id=chat.chat_id, limit=10)["items"]
+        for message in unipile.retrieve_chat_messages(chat_id=chat.lead.chat_id, limit=10)["items"]
     ]
 
     if len(messages_in_chat) == 0:
@@ -70,4 +72,4 @@ async def answer_chat(chat: AnswerChatModel):
 
     message = validation_output
 
-    unipile.send_message(chat_id=chat.chat_id, text=message)
+    unipile.send_message(chat_id=chat.lead.chat_id, text=message)

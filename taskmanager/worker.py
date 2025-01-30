@@ -28,12 +28,11 @@ def trigger_chat_answer():
 
     for task_key in keys:
         task = json.loads(db.get(task_key))
-        
+
         db.delete(task_key)
 
         client: dict = task["client"]
         lead: dict = task["lead"]
-        chat_id: str = task["chat_id"]
         timestamp: float = task.pop("timestamp")
 
         if time.time() - timestamp < task_cfg["InQueueLifeTime"]:
@@ -43,10 +42,10 @@ def trigger_chat_answer():
 
         if not response.ok:
             logger.warning(f"Failed to trigger chat answer: {response.status_code, response.reason}")
-            
-            value = dict(client=client, lead=lead, chat_id=chat_id, timestamp=timestamp)
+
+            value = dict(client=client, lead=lead, timestamp=timestamp)
 
             if not db.set(task_key, json.dumps(value)):
-                raise Exception(f"Failed to add task into redis. Key: {task_key}", context=value)
+                raise Exception(f"Failed to add task into redis. Key: '{task_key}' / Context: {value}")
 
             return
