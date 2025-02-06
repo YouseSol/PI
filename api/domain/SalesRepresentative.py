@@ -4,7 +4,9 @@ import pydantic
 
 
 class SalesRepresentative(pydantic.BaseModel):
-    client: str
+    id: int
+
+    owner: str
 
     first_name: str
     last_name: str
@@ -12,6 +14,8 @@ class SalesRepresentative(pydantic.BaseModel):
     email: str
 
     active: bool = True
+
+    created_at: dt.datetime
 
     deleted: bool = False
     deleted_at: dt.datetime | None = None

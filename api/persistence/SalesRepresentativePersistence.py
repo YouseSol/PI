@@ -50,7 +50,7 @@ class SalesRepresentativePersistence(object):
                 if data is None:
                     raise APIException(message="Database failed to insert and return data.", context=dict(table="SalesRepresentative", operation="INSERT"))
 
-                return SalesRepresentative.model_validate(dict(data))
+                return SalesRepresentative.model_validate(data)
         except psycopg2.DatabaseError as e:
             db.rollback()
 
