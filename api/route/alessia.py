@@ -77,10 +77,6 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     unipile_cfg: dict = APIConfig.get("Unipile")
 
-    unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
-                             subdomain=unipile_cfg["Subdomain"],
-                             port=unipile_cfg["Port"])
-
     key = f"LEAD-LOADING-{client.email}-{campaign.name}"
 
     execution = dict(status="LOADING", progress=0.0)
@@ -95,9 +91,11 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     i = 0
 
-    while i < len(rows):
-        time.sleep(5)
+    unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
+                             subdomain=unipile_cfg["Subdomain"],
+                             port=unipile_cfg["Port"])
 
+    while i < len(rows):
         execution["progress"] = (i + 1) / len(rows)
         execution["status"] = "DONE" if i + 1 == len(rows) else "LOADING"
 

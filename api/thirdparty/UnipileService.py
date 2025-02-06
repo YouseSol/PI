@@ -10,6 +10,8 @@ class UnipileService(object):
 
         self.BASE_URL = f"https://{self.subdomain}.unipile.com:{self.port}/api/v1/"
 
+        self.session = requests.Session()
+
     def retrieve_profile(self, account_retrieving: str, account_id: str) -> dict:
         uri = self.BASE_URL + f"users/{account_id}"
 
@@ -18,7 +20,7 @@ class UnipileService(object):
             "X-API-KEY": self.authorization_key
         }
 
-        response = requests.get(uri, headers=headers, params=dict(account_id=account_retrieving))
+        response = self.session.get(uri, headers=headers, params=dict(account_id=account_retrieving))
 
         response.raise_for_status()
 
@@ -32,7 +34,7 @@ class UnipileService(object):
             "X-API-KEY": self.authorization_key
         }
 
-        response = requests.get(uri, headers=headers, params=dict(limit=limit))
+        response = self.session.get(uri, headers=headers, params=dict(limit=limit))
 
         response.raise_for_status()
 
@@ -50,7 +52,7 @@ class UnipileService(object):
             "text": text
         }
 
-        response = requests.post(uri, headers=headers, json=data)
+        response = self.session.post(uri, headers=headers, json=data)
 
         response.raise_for_status()
 
