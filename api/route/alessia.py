@@ -233,13 +233,6 @@ def extract_data_from_unipile_retrieve_profile(linkedin_profile: dict) -> dict:
 
     extraction["last_name"] = lead_last_name
 
-    lead_headline: str | None = linkedin_profile.get("headline")
-
-    if lead_headline is None:
-        raise ThirdPartyError(message="Linkedin profile retrieved from Unipile has no key: 'headline'.", context=linkedin_profile)
-
-    extraction["lead_headline"] = lead_headline
-
     lead_contact_info: dict = linkedin_profile.get("contact_info", dict())
 
     extraction["emails"] = lead_contact_info.get("emails", list())
