@@ -96,6 +96,8 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
     i = 0
 
     while i < len(rows):
+        time.sleep(5)
+
         execution["progress"] = (i + 1) / len(rows)
         execution["status"] = "DONE" if i + 1 == len(rows) else "LOADING"
 
