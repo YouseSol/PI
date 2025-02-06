@@ -1,13 +1,15 @@
+import datetime as dt
+
 import pydantic
 
 
 class Lead(pydantic.BaseModel):
-    owner: str
+    campaign: int
 
     id: int = 0
 
     linkedin_public_identifier: str
-    chat_id: str | None
+    chat_id: str | None = None
 
     first_name: str
     last_name: str
@@ -16,4 +18,6 @@ class Lead(pydantic.BaseModel):
     phones: list[str]
 
     active: bool = True
+
     deleted: bool = False
+    deleted_at: dt.datetime | None = None

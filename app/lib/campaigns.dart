@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 import 'package:file_picker/file_picker.dart';
 
-import 'package:pi/PIAPI/client.dart';
-import 'package:pi/PIAPI/campaing_api_extension.dart';
+import 'package:pi/API/client.dart';
+import 'package:pi/API/campaing_api_extension.dart';
+
+import 'package:pi/form/campaign_form.dart';
 
 
 class CampaignsPage extends StatefulWidget {
@@ -34,7 +36,8 @@ class _CampaignsPageState extends State<CampaignsPage> {
           ]));
         } else {
           if (!snapshot.hasData) {
-            return buildUpload();
+            return const Expanded(child: Center(child: CampaignForm()));
+            // return buildUpload();
           }
 
           final data = snapshot.data!;

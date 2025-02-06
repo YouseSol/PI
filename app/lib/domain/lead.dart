@@ -1,7 +1,6 @@
 class Lead {
-  String owner;
-
   int id;
+  int campaign;
 
   String linkedinPublicIdentifier;
   String? chatId;
@@ -14,8 +13,8 @@ class Lead {
   bool active;
 
   Lead({
-    required this.owner,
     required this.id,
+    required this.campaign,
     required this.linkedinPublicIdentifier,
     required this.chatId,
     required this.firstName,
@@ -26,8 +25,8 @@ class Lead {
   });
 
   Lead.fromMap(Map obj):
-    owner = obj["owner"] as String,
     id = obj["id"] as int,
+    campaign = obj["campaign"] as int,
     linkedinPublicIdentifier = obj["linkedin_public_identifier"] as String,
     chatId = obj["chat_id"] as String?,
     firstName = obj["first_name"] as String,
@@ -38,8 +37,8 @@ class Lead {
 
   Map toJson() {
     return {
-      'owner': owner,
       'id': id,
+      'campaign': campaign,
       'linkedin_public_identifier': linkedinPublicIdentifier,
       'chat_id': chatId,
       'first_name': firstName,

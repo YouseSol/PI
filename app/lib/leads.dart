@@ -2,10 +2,12 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
-import 'package:pi/PIAPI/client.dart';
-import 'package:pi/PIAPI/domain/lead.dart';
-import 'package:pi/PIAPI/lead_api_extension.dart';
-import 'package:pi/lead_form.dart';
+import 'package:pi/API/client.dart';
+import 'package:pi/API/lead_api_extension.dart';
+
+import 'package:pi/form/lead_form.dart';
+
+import 'package:pi/domain/lead.dart';
 
 
 class LeadsPage extends StatefulWidget {

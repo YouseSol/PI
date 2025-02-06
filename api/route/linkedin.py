@@ -1,4 +1,4 @@
-import logging
+import datetime as dt, logging
 
 import fastapi
 import pydantic
@@ -7,12 +7,17 @@ from api.APIConfig import APIConfig
 
 from api.ai.OutboundSalesAgency import OutboundSalesAgency
 from api.ai.ValidationAgency import ValidationAgency
-from api.exception.APIException import APIException
 
-from api.thirdparty.UnipileService import UnipileService
+from api.controller.Controller import Controller
+from api.controller.MessageSentController import MessageSentController
+
+from api.exception.APIException import APIException
 
 from api.domain.Client import Client
 from api.domain.Lead import Lead
+from api.domain.MessageSent import MessageSent
+
+from api.thirdparty.UnipileService import UnipileService
 
 
 logger = logging.getLogger(__name__)
@@ -72,4 +77,8 @@ async def answer_chat(chat: AnswerChatModel):
 
     message = validation_output
 
-    unipile.send_message(chat_id=chat.lead.chat_id, text=message)
+    message_sent_data = unipile.send_message(chat_id=chat.lead.chat_id, text=message)
+
+    MessageSentController.save(message_sent=MessageSent(id=message_sent_data["message_id"], lead=chat.lead.id, sent_at=dt.datetime.now()))
+
+    Controller.save()

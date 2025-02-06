@@ -1,3 +1,5 @@
+import datetime as dt
+
 import logging
 
 import psycopg2
@@ -33,18 +35,24 @@ class ClientPersistence(object):
                             last_name,
                             standart_message,
                             linkedin_account_id,
-                            hash
+                            hash,
+                            created_at
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
                         RETURNING *;
                     ''',
-                    (form.email, form.first_name, form.last_name, form.standart_message, form.linkedin_account_id, generate_password_hash(form.password))
+                    (form.email,
+                     form.first_name, form.last_name,
+                     form.standart_message, form.linkedin_account_id, generate_password_hash(form.password),
+                     dt.datetime.now())
                 )
 
                 data: dict = cursor.fetchone()
 
                 if data is None:
                     raise APIException(message="Database failed to insert and return data.", context=dict(table="Client", operation="INSERT"))
+
+                logger.debug(data)
 
                 return SystemClient.model_validate(dict(data))
         except psycopg2.DatabaseError as e:
@@ -61,7 +69,7 @@ class ClientPersistence(object):
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Client WHERE email = %s",
+                "SELECT * FROM PI.Client WHERE email = %s AND deleted = false",
                 (form.email, )
             )
 
@@ -86,7 +94,7 @@ class ClientPersistence(object):
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT COUNT(*) as count FROM PI.Client WHERE token = %s",
+                "SELECT COUNT(*) as count FROM PI.Client WHERE token = %s AND deleted = false",
                 (api_token, )
             )
 
@@ -103,7 +111,7 @@ class ClientPersistence(object):
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Client WHERE email = %s",
+                "SELECT * FROM PI.Client WHERE email = %s AND deleted = false",
                 (email, )
             )
 
@@ -120,7 +128,7 @@ class ClientPersistence(object):
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Client WHERE linkedin_account_id = %s",
+                "SELECT * FROM PI.Client WHERE linkedin_account_id = %s AND deleted = false",
                 (linkedin_account_id, )
             )
 
@@ -137,7 +145,7 @@ class ClientPersistence(object):
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Client WHERE token = %s",
+                "SELECT * FROM PI.Client WHERE token = %s AND deleted = false",
                 (api_token, )
             )
 

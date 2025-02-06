@@ -17,6 +17,7 @@ import fastapi
 from api.APIConfig import APIConfig
 
 from api.controller.Controller import Controller
+from api.controller.ContactController import ContactController
 
 from api.route import dependencies
 
@@ -25,6 +26,7 @@ from api.route import user
 from api.route import linkedin
 from api.route import alessia
 from api.route import lead
+from api.route import sales_representative
 
 from api.route.webhook import linkedin as linkedin_wh
 
@@ -37,21 +39,16 @@ api = fastapi.FastAPI(title=APIConfig.get("Name"),
                       root_path="/api",
                       version="0.1.1")
 
-def sent_email(subject: str, body: str, to: str):
-    from_email = APIConfig.get("Support")['Contact']['Sender']['User']
-    from_password = APIConfig.get("Support")['Contact']['Sender']['Password']
-
-    message = MIMEMultipart()
-    message['From'] = from_email
-    message['To'] = to
-    message['Subject'] = subject
-    message.attach(MIMEText(body, 'plain'))
-
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-        server.login(from_email, from_password)
-        server.sendmail(from_email, to, message.as_string())
-
-    logger.info(f"Email sent successfully to: {to}")
+# # INFO: Necessary only for when developing UI.
+# import fastapi.middleware.cors
+#
+# api.add_middleware(
+#     fastapi.middleware.cors.CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+#     allow_credentials=True,
+# )
 
 @api.exception_handler(Exception)
 async def exception_handler(request: fastapi.Request, exc: Exception):
@@ -64,12 +61,10 @@ async def exception_handler(request: fastapi.Request, exc: Exception):
         try:
             moment = dt.datetime.now()
 
-            for email in APIConfig.get("Support")['Contact']['Responsibles']:
-                sent_email(
-                    subject=f"{moment.strftime('[%d/%m/%Y %H:%M]')} Unexpected exception occurred in application: {APIConfig.get('Name')}",
-                    body=f"An unhandle exception occurred at {moment.strftime('%d/%m/%Y %H:%M:%s')}\n{traceback.format_exc()}",
-                    to=email
-                )
+            ContactController.send_email_to_support(
+                subject=f"{moment.strftime('[%d/%m/%Y %H:%M]')} Unexpected exception occurred in application: {APIConfig.get('Name')}",
+                message=f"An unhandle exception occurred at {moment.strftime('%d/%m/%Y %H:%M:%s')}\n{traceback.format_exc()}",
+            )
         except:
             logger.fatal(f"Failed to sent warning email.", exc_info=True)
 
@@ -82,9 +77,9 @@ def ping() -> dict:
 api.include_router(auth.router)
 
 api.include_router(user.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
+api.include_router(sales_representative.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(lead.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(alessia.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
-api.include_router(linkedin.router)
 
 api.include_router(linkedin.router)
 api.include_router(linkedin_wh.router)

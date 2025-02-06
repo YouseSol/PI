@@ -4,6 +4,7 @@ import psycopg2
 
 import pydantic
 
+from api.controller.ClientController import ClientController
 from api.persistence.connector import get_postgres_db
 
 from api.exception.APIException import APIException
@@ -23,37 +24,49 @@ class LeadPersistence(object):
 
         try:
             with db.cursor() as cursor:
-                cursor.execute(
-                    '''
-                        INSERT INTO PI.Lead(
-                            owner,
-                            linkedin_public_identifier,
-                            chat_id,
-                            first_name,
-                            last_name,
-                            emails,
-                            phones,
-                            active,
-                            deleted
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (owner, linkedin_public_identifier)
-                        DO UPDATE SET
-                            first_name = EXCLUDED.first_name,
-                            last_name = EXCLUDED.last_name,
-                            chat_id = EXCLUDED.chat_id,
-                            emails = EXCLUDED.emails,
-                            phones = EXCLUDED.phones,
-                            active = EXCLUDED.active,
-                            deleted = EXCLUDED.deleted
-                        RETURNING *
-                    ''',
-                    (lead.owner,
-                     lead.linkedin_public_identifier, lead.chat_id,
-                     lead.first_name, lead.last_name,
-                     lead.emails, lead.phones,
-                     lead.active, lead.deleted)
-                )
+                try:
+                    cursor.execute(
+                        '''
+                            INSERT INTO PI.Lead(
+                                campaign,
+                                linkedin_public_identifier,
+                                chat_id,
+                                first_name,
+                                last_name,
+                                emails,
+                                phones,
+                                active,
+                                deleted,
+                                deleted_at
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            RETURNING *
+                        ''',
+                        (lead.campaign, lead.linkedin_public_identifier, lead.chat_id,
+                         lead.first_name, lead.last_name,
+                         lead.emails, lead.phones,
+                         lead.active, lead.deleted, lead.deleted_at)
+                    )
+                except psycopg2.errors.UniqueViolation:
+                    db.rollback()
+
+                    cursor.execute(
+                        '''
+                            UPDATE PI.Lead
+                            SET first_name = %s,
+                                last_name = %s,
+                                emails = %s,
+                                phones = %s,
+                                active = %s,
+                                deleted = %s,
+                                chat_id = %s
+                            WHERE campaign = %s AND linkedin_public_identifier = %s AND deleted = FALSE
+                            RETURNING *
+                        ''',
+                        (lead.first_name, lead.last_name,
+                         lead.emails, lead.phones,
+                         lead.active, lead.deleted, lead.chat_id, lead.campaign, lead.linkedin_public_identifier)
+                    )
 
                 data: dict = cursor.fetchone()
 
@@ -67,12 +80,24 @@ class LeadPersistence(object):
             raise
 
     @classmethod
+    def validate_owner(cls, owner: str):
+        ClientController.get(email=owner)
+
+    @classmethod
     def get(cls, owner: str, page_size: int, page: int) -> list[Lead]:
+        LeadPersistence.validate_owner(owner=owner)
+
         db = get_postgres_db()
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Lead WHERE owner = %s AND deleted = false LIMIT %s OFFSET %s",
+                '''
+                SELECT l.*
+                FROM PI.Lead l
+                JOIN PI.Campaign c ON c.id = l.campaign
+                WHERE c.owner = %s AND l.deleted = false AND c.deleted = false
+                LIMIT %s OFFSET %s
+                ''',
                 (owner, page_size, page * page_size)
             )
 
@@ -85,11 +110,18 @@ class LeadPersistence(object):
 
     @classmethod
     def is_a_valid_lead(cls, owner: str, linkedin_public_identifier: str) -> bool:
+        LeadPersistence.validate_owner(owner=owner)
+
         db = get_postgres_db()
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT 1 FROM PI.Lead WHERE owner = %s AND linkedin_public_identifier = %s AND deleted = false",
+                '''
+                SELECT 1
+                FROM PI.Lead l
+                JOIN PI.Campaign c ON c.id = l.campaign
+                WHERE c.owner = %s AND l.linkedin_public_identifier = %s AND c.deleted = false AND l.deleted = false
+                ''',
                 (owner, linkedin_public_identifier)
             )
 
@@ -97,11 +129,18 @@ class LeadPersistence(object):
 
     @classmethod
     def get_by_owner_and_linkedin_public_identifier(cls, owner: str, linkedin_public_identifier: str) -> Lead:
+        LeadPersistence.validate_owner(owner=owner)
+
         db = get_postgres_db()
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Lead WHERE owner = %s AND linkedin_public_identifier = %s AND deleted = false",
+                '''
+                SELECT l.*
+                FROM PI.Lead l
+                JOIN PI.Campaign c ON c.id = l.campaign
+                WHERE c.owner = %s AND l.linkedin_public_identifier = %s AND c.deleted = false AND l.deleted = false
+                ''',
                 (owner, linkedin_public_identifier)
             )
 
@@ -114,11 +153,18 @@ class LeadPersistence(object):
 
     @classmethod
     def get_by_id(cls, owner: str, id: int) -> Lead:
+        LeadPersistence.validate_owner(owner=owner)
+
         db = get_postgres_db()
 
         with db.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM PI.Lead WHERE owner = %s AND id = %s AND deleted = false",
+                '''
+                SELECT l.*
+                FROM PI.Lead l
+                JOIN PI.Campaign c ON c.id = l.campaign
+                WHERE c.owner = %s AND l.id = %s AND c.deleted = false AND l.deleted = false
+                ''',
                 (owner, id)
             )
 

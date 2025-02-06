@@ -1,3 +1,5 @@
+import datetime as dt
+
 import logging
 
 import pydantic
@@ -22,6 +24,7 @@ class LeadController(object):
     @classmethod
     def delete(cls, lead: Lead) -> Lead:
         lead.deleted = True
+        lead.deleted_at = dt.datetime.now()
         return LeadPersistence.save(lead=lead)
 
     @classmethod

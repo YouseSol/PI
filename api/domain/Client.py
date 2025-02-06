@@ -1,4 +1,7 @@
+import datetime as dt
+
 import pydantic
+
 
 class LoginForm(pydantic.BaseModel):
     email: str
@@ -6,7 +9,7 @@ class LoginForm(pydantic.BaseModel):
 
 class UserInfo(pydantic.BaseModel):
     first_name: str
-    last_name: str | None
+    last_name: str
     linkedin_account_id: str
     standart_message: str
 
@@ -20,5 +23,10 @@ class Client(UserInfo):
 
 class SystemClient(Client):
     hash: str
-    deleted: bool
+
     token: str
+
+    created_at: dt.datetime
+
+    deleted: bool
+    deleted_at: dt.datetime | None = None

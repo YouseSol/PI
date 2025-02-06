@@ -26,8 +26,6 @@ async def get(page_size: int, page: int, pi_api_token: t.Annotated[pydantic.UUID
 async def post(lead: Lead, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> Lead:
     client = ClientController.get_by_api_token(api_token=pi_api_token)
 
-    lead.owner = client.email
-
     l =  LeadController.save(lead=lead)
 
     Controller.save()
@@ -37,8 +35,6 @@ async def post(lead: Lead, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Hea
 @router.delete("/")
 async def delete(lead: Lead, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> Lead:
     client = ClientController.get_by_api_token(api_token=pi_api_token)
-
-    lead.owner = client.email
 
     l = LeadController.delete(lead=lead)
 

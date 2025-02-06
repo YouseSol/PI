@@ -1,16 +1,19 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:pi/PIAPI/client.dart';
-import 'package:pi/PIAPI/domain/lead.dart';
-import 'package:pi/PIAPI/lead_api_extension.dart';
+
+import 'package:pi/API/client.dart';
+import 'package:pi/API/lead_api_extension.dart';
+
+import 'package:pi/domain/lead.dart';
 
 
 class LeadForm extends StatefulWidget {
   final PIClient apiClient;
-  final Lead? lead;
+  final Lead lead;
+  final bool shouldPop;
 
-  const LeadForm({ super.key, required this.apiClient, this.lead });
+  const LeadForm({ super.key, required this.apiClient, required this.lead, this.shouldPop = false });
 
   @override
   State<LeadForm> createState() => _LeadForm();
@@ -29,11 +32,9 @@ class _LeadForm extends State<LeadForm> {
   void initState() {
     super.initState();
 
-    if (widget.lead != null) {
-      firstNameController.text = widget.lead!.firstName;
-      lastNameController.text = widget.lead!.lastName;
-      isActive = widget.lead!.active;
-    }
+    firstNameController.text = widget.lead.firstName;
+    lastNameController.text = widget.lead.lastName;
+    isActive = widget.lead.active;
   }
 
   @override
@@ -91,19 +92,21 @@ class _LeadForm extends State<LeadForm> {
     setState(() => isLoading = true);
 
     await widget.apiClient.saveLead(Lead(
-      owner: widget.apiClient.user!.email,
+      campaign: widget.lead.campaign,
       active: isActive,
       firstName: firstNameController.text,
       lastName: lastNameController.text,
-      emails: widget.lead?.emails ?? [],
-      phones: widget.lead?.phones ?? [],
-      linkedinPublicIdentifier: widget.lead?.linkedinPublicIdentifier ?? "",
-      id: widget.lead?.id ?? 0,
-      chatId: widget.lead?.chatId ?? "",
+      emails: widget.lead.emails,
+      phones: widget.lead.phones,
+      linkedinPublicIdentifier: widget.lead.linkedinPublicIdentifier,
+      id: widget.lead.id,
+      chatId: widget.lead.chatId,
     ));
 
-    if (context.mounted) {
-      Navigator.of(context).pop();
+    if (widget.shouldPop) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 }

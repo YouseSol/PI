@@ -29,7 +29,6 @@ def trigger_chat_answer():
     for task_key in keys:
         task = json.loads(db.get(task_key))
 
-        db.delete(task_key)
 
         client: dict = task["client"]
         lead: dict = task["lead"]
@@ -40,12 +39,7 @@ def trigger_chat_answer():
 
         response = requests.post(task_cfg["GenerateResponseURI"], data=json.dumps(task))
 
-        if not response.ok:
-            logger.warning(f"Failed to trigger chat answer: {response.status_code, response.reason}")
-
-            value = dict(client=client, lead=lead, timestamp=timestamp)
-
-            if not db.set(task_key, json.dumps(value)):
-                raise Exception(f"Failed to add task into redis. Key: '{task_key}' / Context: {value}")
-
-            return
+        if response.ok:
+            db.delete(task_key)
+        else:
+            logger.fatal(f"Failed to trigger chat answer: {response.status_code, response.reason}")

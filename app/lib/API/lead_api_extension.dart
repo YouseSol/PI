@@ -1,12 +1,10 @@
-import 'dart:developer';
-
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'package:pi/PIAPI/client.dart';
+import 'package:pi/API/client.dart';
 
-import 'package:pi/PIAPI/domain/lead.dart';
+import 'package:pi/domain/lead.dart';
 
 
 extension LeadAPIExtension on PIClient {

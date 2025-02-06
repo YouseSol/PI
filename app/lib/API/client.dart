@@ -1,33 +1,14 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:http/http.dart' as http;
 
+import 'package:pi/domain/user.dart';
 
-class User {
-  String firstName, lastName;
-  String email;
-  String token;
-  bool active;
 
-  User({
-    required this.firstName, required this.lastName,
-    required this.email,
-    required this.token,
-    required this.active
-  });
-
-  User.fromMap(Map obj):
-    firstName = obj["first_name"] as String,
-    lastName = obj["last_name"] as String,
-    email = obj["email"] as String,
-    token = obj["token"] as String,
-    active = obj["active"] as bool;
-}
 
 class PIClient {
-  // final baseURI = const String.fromEnvironment("API_URL_FROM_UI", defaultValue: 'http://localhost:8080/api');
-  final baseURI = Uri.base.origin + '/api/';
+  // final baseURI = 'http://127.0.0.1:8080/api/';
+  final baseURI = '${Uri.base.origin}/api/';
 
   User? user;
 
@@ -41,7 +22,7 @@ class PIClient {
         "password": password
       }),
       headers: {
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': 'application/json; charset=utf-8',
       }
     );
 

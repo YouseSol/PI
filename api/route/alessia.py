@@ -1,4 +1,4 @@
-import io, json, logging, typing as t, zipfile
+import datetime as dt, io, json, logging, typing as t, time, zipfile
 
 import fastapi
 import pydantic
@@ -8,6 +8,11 @@ import requests
 
 from api.APIConfig import APIConfig
 
+from api.controller.CampaignController import CampaignController
+from api.controller.ContactController import ContactController
+from api.controller.FailedLeadController import FailedLeadController
+from api.domain.Campaign import Campaign
+from api.domain.FailedLead import FailedLead
 from api.persistence.connector import get_redis_db
 
 from api.controller.Controller import Controller
@@ -27,33 +32,29 @@ logger = logging.getLogger(__name__)
 
 router = fastapi.APIRouter(prefix="/alessia", tags=[ "Alessia" ])
 
-@router.post("/activate-leads")
-async def activate_leads(file: fastapi.UploadFile,
+@router.post("/activate-leads/{campaign_name}")
+async def activate_leads(campaign_name: str,
+                         file: fastapi.UploadFile,
                          pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
                          background_tasks: fastapi.BackgroundTasks):
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    if CampaignController.exists(name=campaign_name, owner=client.email):
+        raise fastapi.exceptions.HTTPException(status_code=409, detail="Already exists campaign with that name.")
+
     _bytes = file.file.read()
 
     validate_campaing_file(_bytes)
 
-    background_tasks.add_task(update_leads, file=_bytes, status=True, api_token=pi_api_token)
+    background_tasks.add_task(insert_campaign, file=_bytes, campaign_name=campaign_name, api_token=pi_api_token)
 
-@router.post("/deactivate-leads")
-async def deactivate_leads(file: fastapi.UploadFile,
-                           pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
-                           background_tasks: fastapi.BackgroundTasks):
-    _bytes = file.file.read()
-
-    validate_campaing_file(_bytes)
-
-    background_tasks.add_task(update_leads, file=_bytes, status=True, api_token=pi_api_token)
-
-@router.get("/campaign-status")
-async def campaign_status(pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> dict:
+@router.get("/campaign-status/{campaign}")
+async def campaign_status(campaign: str, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> dict:
     redis_db = get_redis_db()
 
     client = ClientController.get_by_api_token(api_token=pi_api_token)
 
-    key = f"LEAD-LOADING-{client.email}"
+    key = f"LEAD-LOADING-{client.email}-{campaign}"
 
     data = redis_db.get(key)
 
@@ -67,26 +68,41 @@ async def campaign_status(pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Head
 
     return output
 
-def update_leads(file: bytes, status: bool, api_token: pydantic.UUID4):
+def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
     redis_db = get_redis_db()
 
-    sheet = openpyxl.open(io.BytesIO(file))["Sheet"]
-
     client = ClientController.get_by_api_token(api_token=api_token)
+
+    campaign = CampaignController.save(campaign=Campaign(owner=client.email, name=campaign_name, created_at=dt.datetime.now(), active=True))
 
     unipile_cfg: dict = APIConfig.get("Unipile")
 
     unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
-                            subdomain=unipile_cfg["Subdomain"],
-                            port=unipile_cfg["Port"])
+                             subdomain=unipile_cfg["Subdomain"],
+                             port=unipile_cfg["Port"])
 
-    redis_db.set(f"LEAD-LOADING-{client.email}", json.dumps(dict(status="LOADING")))
+    key = f"LEAD-LOADING-{client.email}-{campaign.name}"
 
-    rows = filter(any, list(sheet.iter_rows(min_row=2, values_only=True)))
+    execution = dict(status="LOADING", progress=0.0)
 
-    failed_leads = list()
+    redis_db.set(key, json.dumps(execution))
 
-    for row in rows:
+    sheet = openpyxl.open(io.BytesIO(file))["Sheet"]
+
+    rows = list(filter(any, list(sheet.iter_rows(min_row=2, values_only=True))))
+
+    failed_leads: list[FailedLead] = list()
+
+    i = 0
+
+    while i < len(rows):
+        execution["progress"] = (i + 1) / len(rows)
+        execution["status"] = "DONE" if i + 1 == len(rows) else "LOADING"
+
+        redis_db.set(key, json.dumps(execution))
+
+        row = rows[i]
+
         lead_linkedin_url = str(row[8])
 
         lead_account_id = lead_linkedin_url.split("/")[-1]
@@ -96,25 +112,62 @@ def update_leads(file: bytes, status: bool, api_token: pydantic.UUID4):
             lead_linkedin_profile: dict = extract_data_from_unipile_retrieve_profile(
                 linkedin_profile=unipile.retrieve_profile(account_retrieving=client.linkedin_account_id, account_id=lead_account_id)
             )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 422:
+                failed_lead = FailedLead(campaign=campaign.id, first_name=str(row[1]), last_name=str(row[2]), profile_url=str(row[8]))
+                FailedLeadController.save(failed_lead=failed_lead)
+                failed_leads.append(failed_lead)
+                i = i + 1
+                continue
+            else:
+                ContactController.send_email_to_client(
+                    subject="Prospector Inteligente: Falha ao carregar a campanha.",
+                    message=f"Algo falhou ao carregar a campanha: '{campaign_name}'.\n"
+                             "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
+                    client=client
+                )
+                raise
+        except:
+            ContactController.send_email_to_client(
+                subject="Prospector Inteligente: Falha ao carregar a campanha.",
+                message=f"Algo falhou ao carregar a campanha: '{campaign_name}'.\n"
+                         "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
+                client=client
+            )
+            raise
 
-            lead = Lead(owner=client.email,
-                        linkedin_public_identifier=lead_linkedin_profile["linkedin_identifier"],
-                        first_name=lead_linkedin_profile["first_name"],
-                        last_name=lead_linkedin_profile["last_name"],
-                        emails=lead_linkedin_profile["emails"],
-                        phones=lead_linkedin_profile["phones"],
-                        active=status,
-                        deleted=False,
-                        chat_id=None)
+        lead = Lead(campaign=campaign.id,
+                    linkedin_public_identifier=lead_linkedin_profile["linkedin_identifier"],
+                    first_name=lead_linkedin_profile["first_name"],
+                    last_name=lead_linkedin_profile["last_name"],
+                    emails=lead_linkedin_profile["emails"],
+                    phones=lead_linkedin_profile["phones"],
+                    active=True,
+                    deleted=False,
+                    chat_id=None)
 
-            LeadController.save(lead)
-        except requests.exceptions.HTTPError:
-            failed_leads.append(str(row[1]) + " " + str(row[2]))
-            continue
+        LeadController.save(lead)
+
+        i = i + 1
 
     Controller.save()
 
-    redis_db.set(f"LEAD-LOADING-{client.email}", json.dumps(dict(status="DONE", failed_leads=failed_leads)))
+    if failed_leads:
+        ContactController.send_email_to_client(
+            subject=f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{campaign_name}'.",
+            message="Mensagem automática:\n"
+                    f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}'.\n"
+                    + f"\nNo total foram carregados {1.0 - (len(failed_leads) / len(rows))}% de todos os contatos.\n"
+                    + "Os seguintes falharam:\n"
+                    + '\n'.join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ]),
+            client=client
+        )
+    else:
+        ContactController.send_email_to_client(
+            subject=f"Prospector Inteligente - Campanha carregada com sucesso: '{campaign_name}'.",
+            message=f"Mensagem automática: Todos os contatos foram carregado com sucesso.\n",
+            client=client
+        )
 
 def validate_campaing_file(file: bytes):
     try:
@@ -185,7 +238,7 @@ def extract_data_from_unipile_retrieve_profile(linkedin_profile: dict) -> dict:
     if lead_headline is None:
         raise ThirdPartyError(message="Linkedin profile retrieved from Unipile has no key: 'headline'.", context=linkedin_profile)
 
-    extraction["last_headline"] = lead_headline
+    extraction["lead_headline"] = lead_headline
 
     lead_contact_info: dict = linkedin_profile.get("contact_info", dict())
 

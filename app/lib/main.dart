@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pi/campaigns.dart';
 import 'package:pi/chats.dart';
 
-import 'package:pi/PIAPI/client.dart';
+import 'package:pi/API/client.dart';
 import 'package:pi/leads.dart';
 
 
@@ -73,7 +73,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void login() {
-    apiClient.login(email: emailController.text, password: passwordController.text)
+    // apiClient.login(email: emailController.text, password: passwordController.text)
+    apiClient.login(email: "cs.henriquemchott@gmail.com", password: "password")
              .then(
                (_) => setState(() {
                  emailController.clear();

@@ -6,6 +6,7 @@ import fastapi
 
 from api.APIConfig import APIConfig
 
+from api.controller.CampaignController import CampaignController
 from api.persistence.connector import get_redis_db
 
 from api.controller.Controller import Controller
@@ -19,7 +20,7 @@ from api.exception.ThirdPartyError import ThirdPartyError
 
 from api.thirdparty.UnipileService import UnipileService
 
-from api.domain.Client import Client
+from api.domain.Client import Client, SystemClient
 from api.domain.Lead import Lead
 
 
@@ -184,7 +185,12 @@ def on_linkedin_message_event_from_unipile(event: dict):
 
     LeadController.save(lead=lead)
 
-    if lead.active:
+    campaign = CampaignController.get_by_id(owner=client.email, id=lead.campaign)
+
+    if not campaign.active:
+        return
+
+    if lead.active and campaign.active:
         mark_chat_to_be_answered(client=client, lead=lead, chat_id=event["chat_id"], datetime=event["datetime"])
 
     Controller.save()
@@ -266,7 +272,7 @@ def extract_data_from_unipile_message_event(event: dict) -> dict:
 
     return extraction
 
-def mark_chat_to_be_answered(client: Client, lead: Lead, chat_id: str, datetime: dt.datetime):
+def mark_chat_to_be_answered(client: SystemClient, lead: Lead, chat_id: str, datetime: dt.datetime):
     redis_db = get_redis_db()
 
     key = f"TASK_TRIGGER_CHAT_ANSWER-{client.email}-{lead.linkedin_public_identifier}-{lead.id}"
@@ -279,7 +285,10 @@ def mark_chat_to_be_answered(client: Client, lead: Lead, chat_id: str, datetime:
         if datetime.timestamp() < task["timestamp"]:
             return
 
-    value = dict(client=client.model_dump(), lead=lead.model_dump(), timestamp=datetime.timestamp())
+    client_d = client.model_dump()
+    client_d.pop("created_at") # INFO: DateTime is not JSONSerializable. Do no work with json.dumps
+
+    value = dict(client=client_d, lead=lead.model_dump(), timestamp=datetime.timestamp())
 
     if not redis_db.set(key, json.dumps(value)):
         raise APIException(f"Failed to add task into redis. Key: {key}", context=value)
