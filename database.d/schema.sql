@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS PI.Campaign(
 
     owner                      PI.EMAIL_TYPE NOT NULL,
 
-    name                       VARCHAR       NOT NULL UNIQUE,
+    name                       VARCHAR       NOT NULL,
 
     active                     BOOL          NOT NULL DEFAULT TRUE,
 
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS PI.Campaign(
     FOREIGN KEY (owner) REFERENCES PI.Client(email) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX unique_not_deleted_campaigns ON PI.Campaign (name) WHERE deleted = FALSE;
+CREATE UNIQUE INDEX unique_not_deleted_campaigns ON PI.Campaign (owner, name) WHERE deleted = FALSE;
 
 CREATE TABLE IF NOT EXISTS PI.Lead(
     id                         SERIAL        UNIQUE,

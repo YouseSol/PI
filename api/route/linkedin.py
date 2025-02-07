@@ -65,6 +65,10 @@ async def answer_chat(chat: AnswerChatModel):
         for message in messages_compiled
     ]
 
+    if chat_history[-1]["role"] == "Prospector":
+        # INFO: The last message was sent by the agent or someone with access to the account answered before the agent.
+        return
+
     outbound_sales_crew = OutboundSalesAgency(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
     outbound_sales_output = outbound_sales_crew.kickoff().raw
 

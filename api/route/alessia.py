@@ -89,11 +89,11 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     failed_leads: list[FailedLead] = list()
 
-    i = 0
-
     unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
                              subdomain=unipile_cfg["Subdomain"],
                              port=unipile_cfg["Port"])
+
+    i = 0
 
     while i < len(rows):
         execution["progress"] = (i + 1) / len(rows)
@@ -122,7 +122,7 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
             else:
                 ContactController.send_email_to_client(
                     subject="Prospector Inteligente: Falha ao carregar a campanha.",
-                    message=f"Algo falhou ao carregar a campanha: '{campaign_name}'.\n"
+                    message=f"Algo falhou ao carregar a campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
                              "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
                     client=client
                 )
@@ -130,7 +130,7 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
         except:
             ContactController.send_email_to_client(
                 subject="Prospector Inteligente: Falha ao carregar a campanha.",
-                message=f"Algo falhou ao carregar a campanha: '{campaign_name}'.\n"
+                message=f"Algo falhou ao carregar a campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
                          "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
                 client=client
             )
@@ -156,8 +156,8 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
         ContactController.send_email_to_client(
             subject=f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{campaign_name}'.",
             message="Mensagem automática:\n"
-                    f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}'.\n"
-                    + f"\nNo total foram carregados {1.0 - (len(failed_leads) / len(rows))}% de todos os contatos.\n"
+                    f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
+                    + f"\nNo total foram carregados {100.0 * (1.0 - (len(failed_leads) / len(rows)))}% de todos os contatos.\n"
                     + "Os seguintes falharam:\n"
                     + '\n'.join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ]),
             client=client
@@ -165,7 +165,7 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
     else:
         ContactController.send_email_to_client(
             subject=f"Prospector Inteligente - Campanha carregada com sucesso: '{campaign_name}'.",
-            message=f"Mensagem automática: Todos os contatos foram carregado com sucesso.\n",
+            message=f"Todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}' foram carregados com sucesso.\n",
             client=client
         )
 
