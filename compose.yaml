@@ -106,6 +106,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./database.d:/docker-entrypoint-initdb.d
 
+    ports:
+      - 5432:5432
+
     restart: always
 
   redis:

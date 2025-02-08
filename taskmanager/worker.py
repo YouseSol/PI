@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 @app.task(name="trigger-chat-answer")
 def trigger_chat_answer():
+    start_time = time.time()
+
     task_cfg = APIConfig().get("Tasks")["TriggerChatAnswer"]
 
     db = get_redis_db()
@@ -29,7 +31,9 @@ def trigger_chat_answer():
     keys: list[str] = db.keys("TASK_TRIGGER_CHAT_ANSWER-*")
 
     for task_key in keys:
-        time.sleep(30)
+        if time.time() - start_time > task_cfg["MaxExecutionTime"]:
+            logger.warning("Stopping execution: max time reached")
+            break
 
         task = json.loads(db.get(task_key))
 
