@@ -24,6 +24,8 @@ def trigger_chat_answer():
 
     db = get_redis_db()
 
+    session = requests.session()
+
     keys: list[str] = db.keys("TASK_TRIGGER_CHAT_ANSWER-*")
 
     for task_key in keys:
@@ -38,7 +40,7 @@ def trigger_chat_answer():
         if time.time() - timestamp < task_cfg["InQueueLifeTime"]:
             continue
 
-        response = requests.post(task_cfg["GenerateResponseURI"], data=json.dumps(task))
+        response = session.post(task_cfg["GenerateResponseURI"], data=json.dumps(task))
 
         if response.ok:
             db.delete(task_key)
