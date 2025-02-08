@@ -50,3 +50,5 @@ def trigger_chat_answer():
             db.delete(task_key)
         else:
             logger.fatal(f"Failed to trigger chat answer: {response.status_code, response.reason}")
+
+    session.close()

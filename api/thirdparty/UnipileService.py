@@ -2,6 +2,7 @@ import requests
 
 
 class UnipileService(object):
+    session = requests.Session()
 
     def __init__(self, authorization_key: str, subdomain: str, port: int):
         self.authorization_key = authorization_key
@@ -9,8 +10,6 @@ class UnipileService(object):
         self.port = port
 
         self.BASE_URL = f"https://{self.subdomain}.unipile.com:{self.port}/api/v1/"
-
-        self.session = requests.Session()
 
     def retrieve_profile(self, account_retrieving: str, account_id: str) -> dict:
         uri = self.BASE_URL + f"users/{account_id}"
