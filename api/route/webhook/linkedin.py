@@ -190,8 +190,8 @@ def on_linkedin_message_event_from_unipile(event: dict):
     if not campaign.active:
         return
 
-    if lead.active and campaign.active:
-        mark_chat_to_be_answered(client=client, lead=lead, chat_id=event["chat_id"], datetime=event["datetime"])
+    if lead.active:
+        mark_chat_to_be_answered(client=client, lead=lead, datetime=event["datetime"])
 
     Controller.save()
 
@@ -272,7 +272,7 @@ def extract_data_from_unipile_message_event(event: dict) -> dict:
 
     return extraction
 
-def mark_chat_to_be_answered(client: SystemClient, lead: Lead, chat_id: str, datetime: dt.datetime):
+def mark_chat_to_be_answered(client: SystemClient, lead: Lead, datetime: dt.datetime):
     redis_db = get_redis_db()
 
     key = f"TASK_TRIGGER_CHAT_ANSWER-{client.email}-{lead.linkedin_public_identifier}-{lead.id}"
@@ -286,7 +286,7 @@ def mark_chat_to_be_answered(client: SystemClient, lead: Lead, chat_id: str, dat
             return
 
     client_d = client.model_dump()
-    client_d.pop("created_at") # INFO: DateTime is not JSONSerializable. Do no work with json.dumps
+    client_d.pop("created_at") # INFO: DateTime is not JSONSerializable. Do not work with json.dumps
 
     value = dict(client=client_d, lead=lead.model_dump(), timestamp=datetime.timestamp())
 

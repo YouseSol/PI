@@ -41,9 +41,11 @@ async def answer_chat(chat: AnswerChatModel):
 
     messages_in_chat = [
         dict(role="lead" if message["sender_id"] == chat.lead.linkedin_public_identifier else "agent",
-             content=message["text"])
+             content=message["text"], date=dt.datetime.fromisoformat(message["timestamp"]))
         for message in unipile.retrieve_chat_messages(chat_id=chat.lead.chat_id, limit=10)["items"]
     ]
+
+    messages_in_chat.sort(key=lambda m: m["date"])
 
     if len(messages_in_chat) == 0:
         raise APIException("Asked to generate anwser to empty chat.", context=chat.model_dump())

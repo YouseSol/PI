@@ -29,7 +29,6 @@ def trigger_chat_answer():
     for task_key in keys:
         task = json.loads(db.get(task_key))
 
-
         client: dict = task["client"]
         lead: dict = task["lead"]
         timestamp: float = task.pop("timestamp")
