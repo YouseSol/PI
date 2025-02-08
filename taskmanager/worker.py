@@ -27,6 +27,8 @@ def trigger_chat_answer():
     keys: list[str] = db.keys("TASK_TRIGGER_CHAT_ANSWER-*")
 
     for task_key in keys:
+        time.sleep(30)
+
         task = json.loads(db.get(task_key))
 
         client: dict = task["client"]
