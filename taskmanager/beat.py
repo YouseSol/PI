@@ -1,11 +1,8 @@
-import os
-
 import celery
 
 from taskmanager.APIConfig import APIConfig
 
-from taskmanager.worker import trigger_chat_answer
-
+from taskmanager.worker import trigger_chat_answer, send_email
 
 
 app = celery.Celery(__name__)

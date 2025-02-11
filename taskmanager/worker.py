@@ -1,14 +1,15 @@
 import json, logging, time
 
-import requests
+import smtplib
+import email.mime.multipart
+import email.mime.text
 
+import requests
 import celery
 
 from taskmanager.APIConfig import APIConfig
 
 from taskmanager.connector import get_redis_db
-
-import celery
 
 
 app = celery.Celery(__name__)
@@ -52,3 +53,20 @@ def trigger_chat_answer():
             logger.fatal(f"Failed to trigger chat answer: {response.status_code, response.reason}")
 
     session.close()
+
+@app.task(name="send-email")
+def send_email(to: str, subject: str, body: str):
+    from_email = APIConfig.get("Support")['Contact']['Sender']['User']
+    from_password = APIConfig.get("Support")['Contact']['Sender']['Password']
+
+    message = email.mime.multipart.MIMEMultipart()
+    message['From'] = from_email
+    message['To'] = to
+    message['Subject'] = subject
+    message.attach(email.mime.text.MIMEText(body, 'plain'))
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(from_email, from_password)
+        server.sendmail(from_email, to, message.as_string())
+
+    logger.info(f"Email sent successfully to: {to}")
