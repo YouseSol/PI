@@ -10,6 +10,7 @@ from api.domain.Client import Client, SystemClient
 from api.controller.SalesRepresentativeController import SalesRepresentativeController
 
 from api.APIConfig import APIConfig
+
 from api.exception.InexistentObjectException import InexistentObjectException
 
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ContactController(object):
 
     @classmethod
-    def send_email_to_client(cls, subject: str, message: str, client: SystemClient):
+    def send_email_to_client(cls, subject: str, body: str, client: SystemClient):
         to = client.email
 
         try:
@@ -27,12 +28,12 @@ class ContactController(object):
         except InexistentObjectException:
             pass
 
-        ContactController.send_email_impl(subject=subject, body=message, to=to)
+        ContactController.send_email_impl(subject=subject, body=body, to=to)
 
     @classmethod
-    def send_email_to_support(cls, subject: str, message: str):
+    def send_email_to_support(cls, subject: str, body: str):
         for to in APIConfig.get("Support")['Contact']['Responsibles']:
-            ContactController.send_email_impl(subject=subject, body=message, to=to)
+            ContactController.send_email_impl(subject=subject, body=body, to=to)
 
     @classmethod
     def send_email_impl(cls, subject: str, body: str, to: str):

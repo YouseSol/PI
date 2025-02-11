@@ -47,6 +47,12 @@ services:
       - ./api:/usr/src/app/api
       - ./runtime.d:/usr/src/app/runtime.d
 
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ping || exit 1"]
+      interval: 45s
+      timeout: 30s
+      retries: 2
+
     restart: always
 
   task-manager-beat:

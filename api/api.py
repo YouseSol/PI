@@ -1,23 +1,13 @@
-import datetime as dt
+import datetime as dt, os, traceback
 
 import logging
 import logging.config
-
-import traceback
-
-import os
-
-import smtplib
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
 import fastapi
 
 from api.APIConfig import APIConfig
 
 from api.controller.Controller import Controller
-from api.controller.ContactController import ContactController
 
 from api.route import dependencies
 
@@ -54,19 +44,17 @@ api = fastapi.FastAPI(title=APIConfig.get("Name"),
 async def exception_handler(request: fastapi.Request, exc: Exception):
     Controller.rollback()
 
-    logger.fatal("Unexpected exception occurred:\n", exc_info=True)
-
     # INFO: This could go to a task queue.
     if os.environ.get("DEV_MODE") == "False":
-        try:
-            moment = dt.datetime.now()
+        moment = dt.datetime.now()
 
-            ContactController.send_email_to_support(
+        logger.fatal(
+            "Unexpected exception occurred.",
+            extra=dict(
                 subject=f"{moment.strftime('[%d/%m/%Y %H:%M]')} Unexpected exception occurred in application: {APIConfig.get('Name')}",
-                message=f"An unhandle exception occurred at {moment.strftime('%d/%m/%Y %H:%M:%s')}\n{traceback.format_exc()}",
+                body=f"An unhandle exception occurred at {moment.strftime('%d/%m/%Y %H:%M:%s')}\n{traceback.format_exc()}",
             )
-        except:
-            logger.fatal(f"Failed to sent warning email.", exc_info=True)
+        )
 
     return fastapi.responses.JSONResponse(status_code=500, content=dict(message=f"Something went wrong."))
 
