@@ -1,13 +1,11 @@
 import logging
 
-import pydantic
-
 from api.domain.FailedLead import FailedLead
 
 from api.persistence.FailedLeadPersistence import FailedLeadPersistence
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class FailedLeadController(object):
 

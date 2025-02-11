@@ -2,10 +2,10 @@ import logging
 
 import fastapi
 
+from api.domain.Client import LoginForm, RegisterForm, Client
+
 from api.controller.Controller import Controller
 from api.controller.ClientController import ClientController
-
-from api.domain.Client import LoginForm, RegisterForm, Client
 
 from api.exception.DuplicatingObjectException import DuplicatingObjectException
 

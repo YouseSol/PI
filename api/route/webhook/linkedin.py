@@ -1,27 +1,24 @@
-import datetime as dt
-import json
-import logging
+import datetime as dt, json, logging
 
 import fastapi
 
 from api.APIConfig import APIConfig
 
-from api.controller.CampaignController import CampaignController
+from api.domain.Client import Client, SystemClient
+from api.domain.Lead import Lead
+
 from api.persistence.connector import get_redis_db
 
 from api.controller.Controller import Controller
 from api.controller.ClientController import ClientController
+from api.controller.CampaignController import CampaignController
 from api.controller.LeadController import LeadController
 
 from api.exception.APIException import APIException
 from api.exception.DuplicatingObjectException import DuplicatingObjectException
 from api.exception.InexistentObjectException import InexistentObjectException
+
 from api.exception.ThirdPartyError import ThirdPartyError
-
-from api.thirdparty.UnipileService import UnipileService
-
-from api.domain.Client import Client, SystemClient
-from api.domain.Lead import Lead
 
 
 logger = logging.getLogger(__name__)
@@ -148,7 +145,7 @@ router = fastapi.APIRouter(prefix="/webhook/linkedin", tags=[ "Webhook", "Linked
 def on_linkedin_message_event_from_unipile(event: dict):
     event = extract_data_from_unipile_message_event(event=event)
 
-    logger.debug(event)
+    logger.debug(json.dumps(event, indent=4, ensure_ascii=False, default=str))
 
     if event.get("message") is None:
         return

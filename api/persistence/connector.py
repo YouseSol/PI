@@ -2,8 +2,7 @@ import uuid
 
 import pydantic
 
-import psycopg2, psycopg2.extras, psycopg2.extensions
-import redis
+import psycopg2, psycopg2.extras, psycopg2.extensions, redis
 
 from api.APIConfig import APIConfig
 

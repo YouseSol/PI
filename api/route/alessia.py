@@ -1,31 +1,26 @@
 import datetime as dt, io, json, logging, typing as t, time, zipfile
 
-import fastapi
-import pydantic
-
-import openpyxl
-import requests
+import fastapi, pydantic, openpyxl, requests
 
 from api.APIConfig import APIConfig
 
-from api.controller.CampaignController import CampaignController
-from api.controller.ContactController import ContactController
-from api.controller.FailedLeadController import FailedLeadController
+from api.thirdparty.connector import get_unipile
+
+from api.domain.Client import Client
 from api.domain.Campaign import Campaign
+from api.domain.Lead import Lead
 from api.domain.FailedLead import FailedLead
+
 from api.persistence.connector import get_redis_db
 
 from api.controller.Controller import Controller
-
 from api.controller.ClientController import ClientController
+from api.controller.CampaignController import CampaignController
 from api.controller.LeadController import LeadController
+from api.controller.FailedLeadController import FailedLeadController
+from api.controller.ContactController import ContactController
 
 from api.exception.ThirdPartyError import ThirdPartyError
-
-from api.thirdparty.UnipileService import UnipileService
-
-from api.domain.Client import Client
-from api.domain.Lead import Lead
 
 
 logger = logging.getLogger(__name__)
@@ -89,9 +84,15 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     failed_leads: list[FailedLead] = list()
 
-    unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
-                             subdomain=unipile_cfg["Subdomain"],
-                             port=unipile_cfg["Port"])
+    unipile = get_unipile()
+
+    send_failed_to_load_email = lambda : \
+        ContactController.send_email_to_client(
+            subject="Prospector Inteligente: Falha ao carregar a campanha.",
+            body=f"Algo falhou ao carregar a campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
+                  "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
+            client=client
+        )
 
     i = 0
 
@@ -119,21 +120,10 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
                 failed_leads.append(failed_lead)
                 i = i + 1
                 continue
-            else:
-                ContactController.send_email_to_client(
-                    subject="Prospector Inteligente: Falha ao carregar a campanha.",
-                    body=f"Algo falhou ao carregar a campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
-                             "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
-                    client=client
-                )
-                raise
+
+            raise
         except:
-            ContactController.send_email_to_client(
-                subject="Prospector Inteligente: Falha ao carregar a campanha.",
-                body=f"Algo falhou ao carregar a campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
-                         "Por favor, tente novamente mais tarde ou entre em contato com o suporte.",
-                client=client
-            )
+            send_failed_to_load_email()
             raise
 
         lead = Lead(campaign=campaign.id,
@@ -152,22 +142,18 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     Controller.save()
 
+    subject = f"Prospector Inteligente - Campanha carregada com sucesso: '{campaign_name}'."
+    body = f"Todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}' foram carregados com sucesso.\n"
+
     if failed_leads:
-        ContactController.send_email_to_client(
-            subject=f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{campaign_name}'.",
-            body="Mensagem automática:\n"
-                    f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n"
-                    + f"\nNo total foram carregados {100.0 * (1.0 - (len(failed_leads) / len(rows)))}% de todos os contatos.\n"
-                    + "Os seguintes falharam:\n"
-                    + '\n'.join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ]),
-            client=client
-        )
-    else:
-        ContactController.send_email_to_client(
-            subject=f"Prospector Inteligente - Campanha carregada com sucesso: '{campaign_name}'.",
-            body=f"Todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}' foram carregados com sucesso.\n",
-            client=client
-        )
+        subject = f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{campaign_name}'."
+        body = "Mensagem automática:\n" \
+              f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n" \
+              + f"\nNo total foram carregados {100.0 * (1.0 - (len(failed_leads) / len(rows)))}% de todos os contatos.\n" \
+              + "Os seguintes falharam:\n" \
+              + '\n'.join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ])
+
+    ContactController.send_email_to_client(subject=subject,body=body, client=client)
 
 def validate_campaing_file(file: bytes):
     try:

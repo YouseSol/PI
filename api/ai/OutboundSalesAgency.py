@@ -1,13 +1,14 @@
 import os
-import crewai
 
-from api.domain.Client import Client
-from api.domain.Lead import Lead
-from api.APIConfig import APIConfig
+import crewai
 
 from langchain_openai import ChatOpenAI
 
-os.environ["OPENAI_API_KEY"] = APIConfig.get("OpenAI")["ApiKey"]
+from api.APIConfig import APIConfig
+
+from api.domain.Client import Client
+from api.domain.Lead import Lead
+
 
 class OutboundSalesAgency(object):
 
@@ -70,7 +71,7 @@ class OutboundSalesAgency(object):
             role= "Dono do Produto",
             goal= "Conhecedor do produto e dos serviços que serão oferecidos ao potencial cliente.",
             backstory="Possui a frase padrão que será utilizada para iniciar a conversa com o lead."
-                       f"Mensagem padrão: '{self.client.standart_message}'",
+                       f"Mensagem padrão: '{self.client.standard_message}'",
             llm=self.llm
         )
 
@@ -79,7 +80,7 @@ class OutboundSalesAgency(object):
             description=(
                 "Elaborar uma mensagem estratégica que responda a ultima mensagem do lead no historico de conversas. para engajar o lead e instigá-lo a marcar uma reunião ou passar um contato."
                 "1. Se for o primeiro contato com o lead, utilize a mensagem padrão fornecida pelo Product Owner, não altere a mensagem, antes da mensagem padrão responda de maneira objetiva e curta a ultima mensagem do lead:\n"
-                f"   '{self.client.standart_message}'\n\n"
+                f"   '{self.client.standard_message}'\n\n"
                 "2. Se não for o primeiro contato:\n"
                 "   - Analise as mensagens anteriores e as informações fornecidas pelos outros agentes:\n"
                 "       a. Lead Explorator: Informações sobre o perfil do lead e sua propensão a comprar.\n"

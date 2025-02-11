@@ -1,13 +1,11 @@
 import logging
 
-import pydantic
-
 from api.domain.Campaign import Campaign
 
 from api.persistence.CampaignPersistence import CampaignPersistence
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class CampaignController(object):
 

@@ -2,14 +2,12 @@ import logging
 
 import psycopg2
 
-import pydantic
+from api.domain.SalesRepresentative import SalesRepresentative
 
 from api.persistence.connector import get_postgres_db
 
 from api.exception.APIException import APIException
 from api.exception.InexistentObjectException import InexistentObjectException
-
-from api.domain.SalesRepresentative import SalesRepresentative
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +23,7 @@ class SalesRepresentativePersistence(object):
                 cursor.execute(
                     '''
                         INSERT INTO PI.SalesRepresentative(
-                            client,
+                            owner,
                             first_name,
                             last_name,
                             email,
@@ -36,7 +34,7 @@ class SalesRepresentativePersistence(object):
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
                         RETURNING *
                     ''',
-                    (sales_representative.client,
+                    (sales_representative.owner,
                      sales_representative.first_name,
                      sales_representative.last_name,
                      sales_representative.email,

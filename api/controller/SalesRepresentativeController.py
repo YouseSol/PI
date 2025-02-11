@@ -1,8 +1,7 @@
 import logging
 
-import pydantic
-
 from api.domain.SalesRepresentative import SalesRepresentative
+
 from api.persistence.SalesRepresentativePersistence import SalesRepresentativePersistence
 
 

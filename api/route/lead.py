@@ -1,16 +1,15 @@
-import logging, typing as t, datetime as dt
-
+import datetime as dt, logging, typing as t
 
 import fastapi, pydantic
 
 from api.APIConfig import APIConfig
+
+from api.domain.Lead import Lead
+
 from api.controller.Controller import Controller
 from api.controller.ClientController import ClientController
-
 from api.controller.LeadController import LeadController
-from api.domain.Lead import Lead
-from api.thirdparty.UnipileService import UnipileService
-
+from api.thirdparty.connector import get_unipile
 
 
 logger = logging.getLogger(__name__)
@@ -51,11 +50,7 @@ def get_chat(lead_id: int, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Hea
     if lead.chat_id is None:
         return dict(messages=list())
 
-    unipile_cfg: dict = APIConfig.get("Unipile")
-
-    unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
-                             subdomain=unipile_cfg["Subdomain"],
-                             port=unipile_cfg["Port"])
+    unipile = get_unipile()
 
     chat_history = unipile.retrieve_chat_messages(chat_id=lead.chat_id, limit=250)["items"]
 

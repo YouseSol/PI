@@ -1,15 +1,11 @@
-import datetime as dt
-
-import logging
-
-import pydantic
+import datetime as dt, logging
 
 from api.domain.Lead import Lead
 
 from api.persistence.LeadPersistence import LeadPersistence
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class LeadController(object):
 

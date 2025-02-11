@@ -2,9 +2,9 @@ import logging
 
 import psycopg2
 
-from api.persistence.connector import get_postgres_db
-
 from api.domain.MessageSent import MessageSent
+
+from api.persistence.connector import get_postgres_db
 
 
 logger = logging.getLogger(__name__)

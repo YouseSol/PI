@@ -1,20 +1,16 @@
-import datetime as dt
+import datetime as dt, logging
 
-import logging
-
-import psycopg2
-
-import pydantic
+import psycopg2, pydantic
 
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from api.domain.Client import LoginForm, RegisterForm, SystemClient
 
 from api.persistence.connector import get_postgres_db
 
 from api.exception.APIException import APIException
 from api.exception.DuplicatingObjectException import DuplicatingObjectException
 from api.exception.InexistentObjectException import InexistentObjectException
-
-from api.domain.Client import LoginForm, RegisterForm, SystemClient
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +29,7 @@ class ClientPersistence(object):
                             email,
                             first_name,
                             last_name,
-                            standart_message,
+                            standard_message,
                             linkedin_account_id,
                             hash,
                             created_at
@@ -43,7 +39,7 @@ class ClientPersistence(object):
                     ''',
                     (form.email,
                      form.first_name, form.last_name,
-                     form.standart_message, form.linkedin_account_id, generate_password_hash(form.password),
+                     form.standard_message, form.linkedin_account_id, generate_password_hash(form.password),
                      dt.datetime.now())
                 )
 
@@ -51,8 +47,6 @@ class ClientPersistence(object):
 
                 if data is None:
                     raise APIException(message="Database failed to insert and return data.", context=dict(table="Client", operation="INSERT"))
-
-                logger.debug(data)
 
                 return SystemClient.model_validate(dict(data))
         except psycopg2.DatabaseError as e:

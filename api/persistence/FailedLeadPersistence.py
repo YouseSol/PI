@@ -2,15 +2,12 @@ import logging
 
 import psycopg2
 
-import pydantic
+from api.domain.FailedLead import FailedLead
 
 from api.persistence.connector import get_postgres_db
 
 from api.exception.APIException import APIException
-from api.exception.DuplicatingObjectException import DuplicatingObjectException
 from api.exception.InexistentObjectException import InexistentObjectException
-
-from api.domain.FailedLead import FailedLead
 
 
 logger = logging.getLogger(__name__)

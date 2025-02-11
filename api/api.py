@@ -1,7 +1,4 @@
-import datetime as dt, os, traceback
-
-import logging
-import logging.config
+import datetime as dt, logging, logging.config, os, traceback
 
 import fastapi
 
@@ -20,6 +17,8 @@ from api.route import sales_representative
 
 from api.route.webhook import linkedin as linkedin_wh
 
+
+os.environ["OPENAI_API_KEY"] = APIConfig.get("OpenAI")["ApiKey"]
 
 logging.config.dictConfig(APIConfig.get("Logging"))
 

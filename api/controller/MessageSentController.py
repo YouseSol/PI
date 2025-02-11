@@ -1,6 +1,7 @@
 import logging
 
 from api.domain.MessageSent import MessageSent
+
 from api.persistence.MessageSentPersistence import MessageSentPersistence
 
 

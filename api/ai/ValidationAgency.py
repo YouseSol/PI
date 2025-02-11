@@ -1,12 +1,13 @@
 import os
-import crewai
 
-from api.domain.Lead import Lead
-from api.APIConfig import APIConfig
+import crewai
 
 from langchain_openai import ChatOpenAI
 
-os.environ["OPENAI_API_KEY"] = APIConfig.get("OpenAI")["ApiKey"]
+from api.APIConfig import APIConfig
+
+from api.domain.Lead import Lead
+
 
 class ValidationAgency:
 

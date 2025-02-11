@@ -1,7 +1,6 @@
 import typing as t
 
-import fastapi
-import pydantic
+import fastapi, pydantic
 
 from api.controller.ClientController import ClientController
 

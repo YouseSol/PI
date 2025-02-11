@@ -1,9 +1,14 @@
-import datetime as dt, logging
+import datetime as dt, json, logging
 
-import fastapi
-import pydantic
+import fastapi, pydantic
 
 from api.APIConfig import APIConfig
+
+from api.thirdparty.connector import get_unipile
+
+from api.domain.Client import Client
+from api.domain.Lead import Lead
+from api.domain.MessageSent import MessageSent
 
 from api.ai.OutboundSalesAgency import OutboundSalesAgency
 from api.ai.ValidationAgency import ValidationAgency
@@ -12,12 +17,6 @@ from api.controller.Controller import Controller
 from api.controller.MessageSentController import MessageSentController
 
 from api.exception.APIException import APIException
-
-from api.domain.Client import Client
-from api.domain.Lead import Lead
-from api.domain.MessageSent import MessageSent
-
-from api.thirdparty.UnipileService import UnipileService
 
 
 logger = logging.getLogger(__name__)
@@ -33,16 +32,14 @@ async def answer_chat(chat: AnswerChatModel):
     if chat.lead.chat_id is None:
         raise APIException("Received an chat to answer without the 'chat_id' attribute.")
 
-    unipile_cfg: dict = APIConfig.get("Unipile")
-
-    unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
-                             subdomain=unipile_cfg["Subdomain"],
-                             port=unipile_cfg["Port"])
+    unipile = get_unipile()
 
     messages_in_chat = [
         dict(role="lead" if message["sender_id"] == chat.lead.linkedin_public_identifier else "agent",
-             content=message["text"], date=dt.datetime.fromisoformat(message["timestamp"]))
+             content=message["text"],
+             date=dt.datetime.fromisoformat(message["timestamp"]))
         for message in unipile.retrieve_chat_messages(chat_id=chat.lead.chat_id, limit=10)["items"]
+        if message["text"] is not None
     ]
 
     messages_in_chat.sort(key=lambda m: m["date"])
@@ -55,10 +52,7 @@ async def answer_chat(chat: AnswerChatModel):
 
     for message in remaining_messages:
         if message["role"] == messages_compiled[-1]["role"]:
-            content_message = message['content'] if message["content"] is not None else ""
-            content_last_message = messages_compiled[-1]['content'] if messages_compiled[-1]["content"] is not None else ""
-
-            messages_compiled[-1]["content"] = content_message + ". " + content_last_message
+            messages_compiled[-1]["content"] = messages_compiled[-1]["content"] + ". " + message['content']
         else:
             messages_compiled.append(message)
 
@@ -67,19 +61,22 @@ async def answer_chat(chat: AnswerChatModel):
         for message in messages_compiled
     ]
 
+    logger.debug(json.dumps(chat_history, indent=4, ensure_ascii=False))
+
     if chat_history[-1]["role"] == "Prospector":
-        # INFO: The last message was sent by the agent or someone with access to the account answered before the agent.
+        logger.debug(f"{chat.client.email, chat.lead.first_name}\n" \
+                      "The last message was sent by the agent or someone with access to the account answered before the agent.")
         return
 
     outbound_sales_crew = OutboundSalesAgency(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
     outbound_sales_output = outbound_sales_crew.kickoff().raw
 
-    logger.debug(f"Outbound Sales Message Generated: {outbound_sales_output}")
+    logger.debug(f"Outbound Sales Message Generated:\n{outbound_sales_output}")
 
     validation_crew = ValidationAgency(lead=chat.lead, message=outbound_sales_output).crew()
     validation_output = validation_crew.kickoff().raw
 
-    logger.debug(f"Validation Message Generated: {validation_output}")
+    logger.debug(f"Validation Message Generated:\n{validation_output}")
 
     message = validation_output
 

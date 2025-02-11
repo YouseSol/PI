@@ -6,8 +6,8 @@ from api.domain.Client import LoginForm, RegisterForm, SystemClient
 
 from api.persistence.ClientPersistence import ClientPersistence
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class ClientController(object):
 

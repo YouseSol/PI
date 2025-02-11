@@ -11,7 +11,7 @@ class UserInfo(pydantic.BaseModel):
     first_name: str
     last_name: str
     linkedin_account_id: str
-    standart_message: str
+    standard_message: str
 
 class RegisterForm(LoginForm, UserInfo):
     pass
