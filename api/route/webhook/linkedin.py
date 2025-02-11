@@ -150,6 +150,9 @@ def on_linkedin_message_event_from_unipile(event: dict):
 
     logger.debug(event)
 
+    if event.get("message") is None:
+        return
+
     try:
         client = ClientController.get_by_linkedin_account_id(linkedin_account_id=event["account_id"])
     except InexistentObjectException:
@@ -205,12 +208,7 @@ def extract_data_from_unipile_message_event(event: dict) -> dict:
 
     extraction["event"] = event_type
 
-    message: str | None = event.get("message")
-
-    if message is None:
-        raise ThirdPartyError(message="Unipile message event has no key: 'message'.", context=event)
-
-    extraction["message"] = message
+    extraction["message"] = event.get("message") # INFO: if message is None it means that the message was delete.
 
     provider: str | None = event.get("account_type")
 
