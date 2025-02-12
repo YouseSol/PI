@@ -4,18 +4,17 @@ import smtplib
 import email.mime.multipart
 import email.mime.text
 
-import requests
-import celery
+import celery, requests
 
-from taskmanager.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from taskmanager.connector import get_redis_db
 
 
 app = celery.Celery(__name__)
 
-app.conf.update(broker_url=APIConfig.get("Celery")["BrokerURL"],
-                result_backend=APIConfig.get("Celery")["ResultBackend"])
+app.conf.update(broker_url=AppConfig["Celery"]["BrokerURL"],
+                result_backend=AppConfig["Celery"]["ResultBackend"])
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 def trigger_chat_answer():
     start_time = time.time()
 
-    task_cfg = APIConfig().get("Tasks")["TriggerChatAnswer"]
+    task_cfg = AppConfig().get("Tasks")["TriggerChatAnswer"]
 
     db = get_redis_db()
 
@@ -33,7 +32,7 @@ def trigger_chat_answer():
 
     for task_key in keys:
         if time.time() - start_time > task_cfg["MaxExecutionTime"]:
-            logger.warning("Stopping execution: max time reached")
+            logger.debug("Stopping execution: max time reached")
             break
 
         task = json.loads(db.get(task_key))
@@ -50,14 +49,19 @@ def trigger_chat_answer():
         if response.ok:
             db.delete(task_key)
         else:
-            logger.fatal(f"Failed to trigger chat answer: {response.status_code, response.reason}")
+            message = f"Failed to answer chat: {response.status_code, response.reason}"
+
+            logger.fatal(message)
+
+            for email_responsible in AppConfig["Support"]["Responsibles"]:
+                send_email(to=email_responsible, subject="Failed to anwer chat.", body=message)
 
     session.close()
 
 @app.task(name="send-email")
 def send_email(to: str, subject: str, body: str):
-    from_email = APIConfig.get("Support")['Contact']['Sender']['User']
-    from_password = APIConfig.get("Support")['Contact']['Sender']['Password']
+    from_email = AppConfig["Support"]['Contact']['Sender']['User']
+    from_password = AppConfig["Support"]['Contact']['Sender']['Password']
 
     message = email.mime.multipart.MIMEMultipart()
     message['From'] = from_email

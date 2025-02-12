@@ -2,7 +2,7 @@ import datetime as dt, json, logging
 
 import fastapi, pydantic
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.thirdparty.connector import get_unipile
 

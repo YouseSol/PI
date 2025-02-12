@@ -4,8 +4,6 @@ import crewai
 
 from langchain_openai import ChatOpenAI
 
-from api.APIConfig import APIConfig
-
 from api.domain.Client import Client
 from api.domain.Lead import Lead
 

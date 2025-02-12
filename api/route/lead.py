@@ -2,7 +2,7 @@ import datetime as dt, logging, typing as t
 
 import fastapi, pydantic
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.domain.Lead import Lead
 

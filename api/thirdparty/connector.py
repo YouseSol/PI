@@ -1,6 +1,6 @@
 import requests
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.thirdparty.UnipileService import UnipileService
 
@@ -12,7 +12,7 @@ G = dict()
 def get_unipile():
     global G
 
-    UNIPILE_CONFIG = APIConfig.get("Unipile")
+    UNIPILE_CONFIG = AppConfig["Unipile"]
 
     unipile = G.get("UNIPILE_SERVICE", None)
 

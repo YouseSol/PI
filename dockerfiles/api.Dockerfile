@@ -1,15 +1,15 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=America/Sao_Paulo
-
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt update
 RUN apt install -y python3.11 python3.11-dev python3-pip
 RUN apt install -y libpq-dev
 
 WORKDIR /usr/src/app
+
+COPY appconfig appconfig
+RUN python3.11 -m pip install -r appconfig/requirements.txt
 
 COPY entrypoint.sh /entrypoint.sh
 

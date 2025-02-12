@@ -4,8 +4,7 @@ import pydantic
 
 import psycopg2, psycopg2.extras, psycopg2.extensions, redis
 
-from api.APIConfig import APIConfig
-
+from appconfig import AppConfig
 
 psycopg2.extensions.register_adapter(pydantic.UUID4, lambda obj: psycopg2.extensions.adapt(str(obj)))
 psycopg2.extensions.register_adapter(uuid.UUID, lambda obj: psycopg2.extensions.adapt(str(obj)))
@@ -17,7 +16,7 @@ G = dict()
 def get_postgres_db():
     global G
 
-    POSTGRES_CONFIG = APIConfig.get("Postgres")
+    POSTGRES_CONFIG = AppConfig["Postgres"]
 
     db = G.get("POSTGRES_DATABASE", None)
 
@@ -36,7 +35,7 @@ def get_postgres_db():
 def get_redis_db():
     global G
 
-    REDIS_CONFIG = APIConfig.get("Redis")
+    REDIS_CONFIG = AppConfig["Redis"]
 
     db = G.get("REDIS_DATABASE", None)
 

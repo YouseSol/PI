@@ -2,7 +2,7 @@ import datetime as dt, logging, logging.config, os, traceback
 
 import fastapi
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.controller.Controller import Controller
 
@@ -18,13 +18,13 @@ from api.route import sales_representative
 from api.route.webhook import linkedin as linkedin_wh
 
 
-os.environ["OPENAI_API_KEY"] = APIConfig.get("OpenAI")["ApiKey"]
+os.environ["OPENAI_API_KEY"] = AppConfig["OpenAI"]["ApiKey"]
 
-logging.config.dictConfig(APIConfig.get("Logging"))
+logging.config.dictConfig(AppConfig["Logging"])
 
 logger = logging.getLogger(__name__)
 
-api = fastapi.FastAPI(title=APIConfig.get("Name"),
+api = fastapi.FastAPI(title=AppConfig["Name"],
                       root_path="/api",
                       version="0.1.1")
 
@@ -50,7 +50,7 @@ async def exception_handler(request: fastapi.Request, exc: Exception):
         logger.fatal(
             "Unexpected exception occurred.",
             extra=dict(
-                subject=f"{moment.strftime('[%d/%m/%Y %H:%M]')} Unexpected exception occurred in application: {APIConfig.get('Name')}",
+                subject=f"{moment.strftime('[%d/%m/%Y %H:%M]')} Unexpected exception occurred in application: {AppConfig['Name']}",
                 body=f"An unhandle exception occurred at {moment.strftime('%d/%m/%Y %H:%M:%s')}\n{traceback.format_exc()}",
             )
         )

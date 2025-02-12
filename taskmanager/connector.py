@@ -1,6 +1,6 @@
 import redis
 
-from taskmanager.APIConfig import APIConfig
+from appconfig import AppConfig
 
 
 global G
@@ -10,7 +10,7 @@ G = dict()
 def get_redis_db():
     global G
 
-    REDIS_CONFIG = APIConfig.get("Redis")
+    REDIS_CONFIG = AppConfig["Redis"]
 
     db = G.get("REDIS_DATABASE", None)
 

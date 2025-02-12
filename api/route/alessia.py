@@ -2,7 +2,7 @@ import datetime as dt, io, json, logging, typing as t, time, zipfile
 
 import fastapi, pydantic, openpyxl, requests
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.thirdparty.connector import get_unipile
 
@@ -70,7 +70,7 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     campaign = CampaignController.save(campaign=Campaign(owner=client.email, name=campaign_name, created_at=dt.datetime.now(), active=True))
 
-    unipile_cfg: dict = APIConfig.get("Unipile")
+    unipile_cfg: dict = AppConfig["Unipile"]
 
     key = f"LEAD-LOADING-{client.email}-{campaign.name}"
 

@@ -2,7 +2,7 @@ import datetime as dt, json, logging
 
 import fastapi
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.domain.Client import Client, SystemClient
 from api.domain.Lead import Lead
@@ -35,7 +35,7 @@ router = fastapi.APIRouter(prefix="/webhook/linkedin", tags=[ "Webhook", "Linked
 #         logger.info(f"Recieving Alessia invite event from inactive Client: '{owner.email}'.")
 #         return
 #
-#     unipile_cfg: dict = APIConfig.get("Unipile")
+#     unipile_cfg: dict = AppConfig.get("Unipile")
 #
 #     unipile = UnipileService(authorization_key=unipile_cfg["AuthorizationKey"],
 #                              subdomain=unipile_cfg["Subdomain"],

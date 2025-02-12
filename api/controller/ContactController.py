@@ -1,6 +1,6 @@
 import celery
 
-from api.APIConfig import APIConfig
+from appconfig import AppConfig
 
 from api.domain.Client import Client, SystemClient
 
@@ -25,10 +25,10 @@ class ContactController(object):
 
     @classmethod
     def send_email_to_support(cls, subject: str, body: str):
-        for to in APIConfig.get("Support")['Contact']['Responsibles']:
+        for to in AppConfig["Support"]['Contact']['Responsibles']:
             ContactController.send_email_impl(to=to, subject=subject, body=body)
 
     @classmethod
     def send_email_impl(cls, to: str, subject: str, body: str):
-        celery.Celery('celery_invoker', broker=APIConfig.get("Celery")["BrokerURL"]) \
+        celery.Celery('celery_invoker', broker=AppConfig["Celery"]["BrokerURL"]) \
               .send_task("send-email", args=[ to, subject, body ])

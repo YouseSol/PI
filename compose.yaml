@@ -40,7 +40,7 @@ services:
       dockerfile: ./dockerfiles/api.Dockerfile
 
     environment:
-      API_CONFIG_PATH: runtime.d/APIConfig.yaml
+      APP_CONFIG_PATH: runtime.d/APIConfig.yaml
       DEV_MODE: $DEV_MODE
 
     volumes:
@@ -63,7 +63,7 @@ services:
       dockerfile: ./dockerfiles/taskmanager.Dockerfile
 
     environment:
-      API_CONFIG_PATH: runtime.d/APIConfig.yaml
+      APP_CONFIG_PATH: runtime.d/APIConfig.yaml
 
     volumes:
       - ./runtime.d:/usr/src/app/runtime.d
@@ -80,7 +80,7 @@ services:
       dockerfile: ./dockerfiles/taskmanager.Dockerfile
 
     environment:
-      API_CONFIG_PATH: runtime.d/APIConfig.yaml
+      APP_CONFIG_PATH: runtime.d/APIConfig.yaml
 
     volumes:
       - ./runtime.d:/usr/src/app/runtime.d
