@@ -91,19 +91,21 @@ CREATE TABLE IF NOT EXISTS PI.Lead(
 
     campaign                   INTEGER       NOT NULL,
 
-    linkedin_public_identifier VARCHAR       NOT NULL,
-    chat_id                    VARCHAR           NULL,
-
     first_name                 VARCHAR       NOT NULL,
     last_name                  VARCHAR       NOT NULL,
 
     emails                     VARCHAR[]     NOT NULL,
     phones                     VARCHAR[]     NOT NULL,
 
+    feedback                   BOOL              NULL,
+
     active                     BOOL          NOT NULL DEFAULT TRUE,
 
     deleted                    BOOL          NOT NULL DEFAULT FALSE,
     deleted_at                 TIMESTAMP         NULL,
+
+    linkedin_public_identifier VARCHAR       NOT NULL,
+    chat_id                    VARCHAR           NULL,
 
     CHECK (deleted = FALSE OR deleted_at IS NOT NULL),
 
@@ -132,6 +134,7 @@ CREATE TABLE IF NOT EXISTS PI.MessageSent(
     id                         VARCHAR       NOT NULL UNIQUE,
     lead                       INTEGER       NOT NULL,
     sent_at                    TIMESTAMP     NOT NULL,
+    feedback                   VARCHAR           NULL,
 
     PRIMARY KEY (id),
 

@@ -7,7 +7,7 @@ from appconfig import AppConfig
 from api.thirdparty.connector import get_unipile
 
 from api.domain.Client import Client
-from api.domain.Lead import Lead
+from api.domain.Lead import SystemLead
 from api.domain.MessageSent import MessageSent
 
 from api.ai.OutboundSalesAgency import OutboundSalesAgency
@@ -25,7 +25,7 @@ router = fastapi.APIRouter(prefix="/linkedin", tags=[ "Linkedin" ])
 
 class AnswerChatModel(pydantic.BaseModel):
     client: Client
-    lead: Lead
+    lead: SystemLead
 
 @router.post("/answer-chat")
 async def answer_chat(chat: AnswerChatModel):

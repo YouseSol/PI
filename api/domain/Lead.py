@@ -4,20 +4,23 @@ import pydantic
 
 
 class Lead(pydantic.BaseModel):
-    campaign: int
-
     id: int = 0
-
-    linkedin_public_identifier: str
-    chat_id: str | None = None
 
     first_name: str
     last_name: str
 
-    emails: list[str]
-    phones: list[str]
+    emails: list[str] = list()
+    phones: list[str] = list()
+
+    feedback: bool | None = None
 
     active: bool = True
+
+class SystemLead(Lead):
+    campaign: int
+
+    linkedin_public_identifier: str
+    chat_id: str | None = None
 
     deleted: bool = False
     deleted_at: dt.datetime | None = None

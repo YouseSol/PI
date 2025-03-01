@@ -9,9 +9,10 @@ from api.controller.Controller import Controller
 from api.route import dependencies
 
 from api.route import auth
+
 from api.route import user
 from api.route import linkedin
-from api.route import alessia
+from api.route import campaign
 from api.route import lead
 from api.route import sales_representative
 
@@ -65,8 +66,8 @@ api.include_router(auth.router)
 
 api.include_router(user.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(sales_representative.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
+api.include_router(campaign.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 api.include_router(lead.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
-api.include_router(alessia.router, dependencies=[ fastapi.Depends(dependencies.has_valid_api_token) ])
 
 api.include_router(linkedin.router)
 api.include_router(linkedin_wh.router)
