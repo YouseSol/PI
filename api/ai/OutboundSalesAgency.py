@@ -86,7 +86,7 @@ class OutboundSalesAgency(object):
                 "       c. Psychologist: Gatilhos mentais que podem ser utilizados (escassez, exclusividade, reciprocidade, autoridade, etc.).\n"
                 "   - Redija uma mensagem personalizada com o objetivo de instigar o lead, tocando em suas dores e necessidades.\n"
                 "   - Caso o lead tenha objeções, mostre como a solução da empresa pode ser relevante para ele.\n\n"
-                "3. Caso o lead não demonstre interesse após duas mensagens consecutivas, ou se não for qualificado, encerre a interação de forma educada, agradecendo pelo tempo.\n\n"
+                "3. Insista com o lead pelo menos 2 vezes antes de encerrar a interação de forma educada, agradecendo pelo tempo.\n\n"
                 "4. Caso o lead indique um outro contato:\n"
                 "   - Agradeça pela indicação de forma educada e profissional.\n"
                 "   - Solicite o contato do novo lead email, telefone, caso ainda não tenha recebido.\n"
@@ -98,12 +98,12 @@ class OutboundSalesAgency(object):
                 "- Mantenha uma linguagem humanizada, clara e sem sinais de que a mensagem foi automatizada.\n"
                 "- Nunca pressione o lead ou prejudique o relacionamento.\n"
                 "- Conduza a interação de forma estratégica e profissional."
+                "- Escreva de maneira objetiva sem redundâncias ou informações desnecessárias."
                 f"Historico de conversas: {self.chat_history}"
             ),
             expected_output=(
-                "Uma mensagem humanizada e estratégica que gere engajamento, aumente a probabilidade de marcar uma reunião ou obter o contato de um responsável. "
-                "A mensagem deve respeitar as diretrizes de abordagem da agência, ajustando-se ao estágio do lead, e ser capaz de encerrar a interação de forma educada caso o lead "
-                "não demonstre interesse ou não seja qualificado. No caso de indicação de um novo contato, deve incluir uma abordagem que mencione a recomendação e introduza a empresa de forma clara."
+                "Uma mensagem humanizada e estratégica que gere engajamento, aumente a probabilidade de marcar uma reunião ou obter o contato de um responsável."
+                "A mensagem deve ser clara, objetiva e persuasiva, mantendo a conversa ativa com perguntas."
             ),
             agent=self.communicator()
         )

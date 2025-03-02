@@ -10,6 +10,7 @@ from api.domain.Client import Client
 from api.domain.Lead import SystemLead
 from api.domain.MessageSent import MessageSent
 
+from api.ai.IntentAnalyzerAgency import IntentAnalyzerAgency
 from api.ai.OutboundSalesAgency import OutboundSalesAgency
 from api.ai.ValidationAgency import ValidationAgency
 
@@ -67,6 +68,14 @@ async def answer_chat(chat: AnswerChatModel):
         logger.debug(f"{chat.client.email, chat.lead.first_name}\n" \
                       "The last message was sent by the agent or someone with access to the account answered before the agent.")
         return
+
+    intent_analyzer_crew = IntentAnalyzerAgency(conversation_history=chat_history).crew()
+    intent_analyzer_output = intent_analyzer_crew.kickoff().raw
+    if intent_analyzer_output == "True":
+        # The lead wants to schedule a meeting
+        # Send email to sdr
+        # Deactivate the lead
+        pass
 
     outbound_sales_crew = OutboundSalesAgency(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
     outbound_sales_output = outbound_sales_crew.kickoff().raw
