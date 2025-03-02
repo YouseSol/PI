@@ -6,12 +6,14 @@ from appconfig import AppConfig
 
 from api.thirdparty.connector import get_unipile
 
+from api.persistence.connector import get_redis_db
+
 from api.domain.Client import Client
 from api.domain.Campaign import Campaign
-from api.domain.Lead import Lead
+from api.domain.Lead import Lead, SystemLead
 from api.domain.FailedLead import FailedLead
 
-from api.persistence.connector import get_redis_db
+from api.route.responses import CountResponse, CampaignsResponse, LeadsResponse
 
 from api.controller.Controller import Controller
 from api.controller.ClientController import ClientController
@@ -25,16 +27,16 @@ from api.exception.ThirdPartyError import ThirdPartyError
 
 logger = logging.getLogger(__name__)
 
-router = fastapi.APIRouter(prefix="/alessia", tags=[ "Alessia" ])
+router = fastapi.APIRouter(prefix="/campaign", tags=[ "Campaigns" ])
 
-@router.post("/activate-leads/{campaign_name}")
-async def activate_leads(campaign_name: str,
-                         file: fastapi.UploadFile,
-                         pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
-                         background_tasks: fastapi.BackgroundTasks):
+@router.post("/from-file/{campaign_name}")
+async def post(campaign_name: str,
+               file: fastapi.UploadFile,
+               pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
+               background_tasks: fastapi.BackgroundTasks):
     client = ClientController.get_by_api_token(api_token=pi_api_token)
 
-    if CampaignController.exists(name=campaign_name, owner=client.email):
+    if CampaignController.exists(client=client, name=campaign_name):
         raise fastapi.exceptions.HTTPException(status_code=409, detail="Already exists campaign with that name.")
 
     _bytes = file.file.read()
@@ -42,26 +44,6 @@ async def activate_leads(campaign_name: str,
     validate_campaing_file(_bytes)
 
     background_tasks.add_task(insert_campaign, file=_bytes, campaign_name=campaign_name, api_token=pi_api_token)
-
-@router.get("/campaign-status/{campaign}")
-async def campaign_status(campaign: str, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> dict:
-    redis_db = get_redis_db()
-
-    client = ClientController.get_by_api_token(api_token=pi_api_token)
-
-    key = f"LEAD-LOADING-{client.email}-{campaign}"
-
-    data = redis_db.get(key)
-
-    if data is None:
-        raise fastapi.HTTPException(status_code=404)
-
-    output =  json.loads(data)
-
-    if output["status"] == "DONE":
-        redis_db.delete(key)
-
-    return output
 
 def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
     redis_db = get_redis_db()
@@ -126,15 +108,15 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
             send_failed_to_load_email()
             raise
 
-        lead = Lead(campaign=campaign.id,
-                    linkedin_public_identifier=lead_linkedin_profile["linkedin_identifier"],
-                    first_name=lead_linkedin_profile["first_name"],
-                    last_name=lead_linkedin_profile["last_name"],
-                    emails=lead_linkedin_profile["emails"],
-                    phones=lead_linkedin_profile["phones"],
-                    active=True,
-                    deleted=False,
-                    chat_id=None)
+        lead = SystemLead(campaign=campaign.id,
+                          linkedin_public_identifier=lead_linkedin_profile["linkedin_identifier"],
+                          first_name=lead_linkedin_profile["first_name"],
+                          last_name=lead_linkedin_profile["last_name"],
+                          emails=lead_linkedin_profile["emails"],
+                          phones=lead_linkedin_profile["phones"],
+                          active=True,
+                          deleted=False,
+                          chat_id=None)
 
         LeadController.save(lead)
 
@@ -225,3 +207,104 @@ def extract_data_from_unipile_retrieve_profile(linkedin_profile: dict) -> dict:
     extraction["phones"] = lead_contact_info.get("phones", list())
 
     return extraction
+
+class CampaignNaming(pydantic.BaseModel):
+    name: str
+
+@router.put("/{campaign_name}/name")
+async def put(campaign_name: str,
+              naming: CampaignNaming,
+              pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> Campaign:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    if not CampaignController.exists(client=client, name=campaign_name):
+        raise fastapi.exceptions.HTTPException(status_code=404, detail=f"Could not find campaign with name: '{campaign_name}'.")
+
+    campaign = CampaignController.get_by_name(client=client, name=campaign_name)
+
+    campaign = CampaignController.update_name(campaign=campaign, new_name=naming.name)
+
+    Controller.save()
+
+    return Campaign(**campaign.dict(include=Campaign.__fields__.keys()))
+
+
+@router.delete("/{name}")
+async def delete(name: str, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]):
+    raise fastapi.exceptions.HTTPException(status_code=501, detail="Not implemented yet.")
+
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaign = CampaignController.get_by_name(name=name, owner=client.email)
+
+    CampaignController.delete(campaign=campaign)
+
+    Controller.save()
+
+@router.get("/all/")
+async def get_all(pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> CampaignsResponse:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaigns = CampaignController.get_all(client=client)
+
+    return CampaignsResponse(campaigns=[ Campaign(**system_campaign.dict(include=Campaign.__fields__.keys())) for system_campaign in campaigns ])
+
+@router.get("/{name}/leads/count")
+async def count_leads(name: str, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> CountResponse:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaign = CampaignController.get_by_name(client=client, name=name)
+
+    return CountResponse(count=LeadController.count_leads_in_campaign(campaign=campaign))
+
+@router.get("/{name}/leads")
+async def get(name: str,
+              page_size: int, page: int,
+              pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
+              query: str | None = None,
+              has_conversation: bool | None = None,
+              is_active: bool | None = None) -> LeadsResponse:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaign = CampaignController.get_by_name(client=client, name=name)
+
+    leads = LeadController.paginate_leads_in_campaign(
+        campaign=campaign,
+        page_size=page_size, page=page,
+        query=query,
+        has_conversation=has_conversation,
+        is_active=is_active
+    )
+
+    return LeadsResponse(leads=[ Lead(**system_lead.dict(include=Lead.__fields__.keys())) for system_lead in leads ])
+
+@router.get("/{name}/answered-chats/count")
+async def get_answered_chats(name: str, pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) -> CountResponse:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaign = CampaignController.get_by_name(client=client, name=name)
+
+    return CountResponse(count=CampaignController.count_answered_chats(campaign=campaign))
+
+class MessagesPerDayItem(pydantic.BaseModel):
+    date: dt.date
+    count: int
+
+class MessagesPerDayResponse(pydantic.BaseModel):
+    messagesPerDay : list[MessagesPerDayItem]
+
+@router.get("/{name}/messages-per-day")
+async def get_messages_per_day(name: str,
+                               since: dt.date, before: dt.date,
+                               pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) \
+                               -> MessagesPerDayResponse:
+    client = ClientController.get_by_api_token(api_token=pi_api_token)
+
+    campaign = CampaignController.get_by_name(client=client, name=name)
+
+    history_response = [
+        MessagesPerDayItem(date=day["date"], count=day["messages_sent"])
+        for day in CampaignController.count_messages_per_day(campaign=campaign, since=since, before=before)
+    ]
+
+    return MessagesPerDayResponse(messagesPerDay=history_response)

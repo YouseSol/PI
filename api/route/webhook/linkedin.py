@@ -5,7 +5,7 @@ import fastapi
 from appconfig import AppConfig
 
 from api.domain.Client import Client, SystemClient
-from api.domain.Lead import Lead
+from api.domain.Lead import SystemLead
 
 from api.persistence.connector import get_redis_db
 
@@ -267,7 +267,7 @@ def extract_data_from_unipile_message_event(event: dict) -> dict:
 
     return extraction
 
-def mark_chat_to_be_answered(client: SystemClient, lead: Lead, datetime: dt.datetime):
+def mark_chat_to_be_answered(client: SystemClient, lead: SystemLead, datetime: dt.datetime):
     redis_db = get_redis_db()
 
     key = f"TASK_TRIGGER_CHAT_ANSWER-{client.email}-{lead.linkedin_public_identifier}-{lead.id}"
