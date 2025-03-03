@@ -53,24 +53,28 @@ def trigger_chat_answer():
 
             logger.fatal(message)
 
-            for email_responsible in AppConfig["Support"]["Responsibles"]:
+            for email_responsible in AppConfig["Support"]["Contact"]["Responsibles"]:
                 send_email(to=email_responsible, subject="Failed to anwer chat.", body=message)
 
     session.close()
 
-@app.task(name="send-email")
+@app.task(name="send-email", autoretry_for=(Exception, ), retry_backoff=2)
 def send_email(to: str, subject: str, body: str):
-    from_email = AppConfig["Support"]['Contact']['Sender']['User']
-    from_password = AppConfig["Support"]['Contact']['Sender']['Password']
+    try:
+        from_email = AppConfig["Support"]['Contact']['Sender']['User']
+        from_password = AppConfig["Support"]['Contact']['Sender']['Password']
 
-    message = email.mime.multipart.MIMEMultipart()
-    message['From'] = from_email
-    message['To'] = to
-    message['Subject'] = subject
-    message.attach(email.mime.text.MIMEText(body, 'plain'))
+        message = email.mime.multipart.MIMEMultipart()
+        message['From'] = from_email
+        message['To'] = to
+        message['Subject'] = subject
+        message.attach(email.mime.text.MIMEText(body, 'plain'))
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-        server.login(from_email, from_password)
-        server.sendmail(from_email, to, message.as_string())
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(from_email, from_password)
+            server.sendmail(from_email, to, message.as_string())
 
-    logger.info(f"Email sent successfully to: {to}")
+        logger.info(f"Email sent successfully to: {to}")
+    except:
+        logger.fatal(f"Failed to send email. {json.dumps(dict(to=to, subject=subject, body=body), indent=2, ensure_ascii=False)}")
+        raise

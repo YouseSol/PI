@@ -3,7 +3,7 @@ import crewai.crew
 from langchain_openai import ChatOpenAI
 
 class IntentAnalyzerAgency:
-    def __init__(self, conversation_history: str):
+    def __init__(self, conversation_history: list[dict]):
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0)
         self.conversation_history = conversation_history
 
@@ -33,7 +33,7 @@ class IntentAnalyzerAgency:
             expected_output="Exclusivamente 'True' ou 'False', sem explicações adicionais.",
             agent=self.intent_analyzer()
         )
-    
+
     def crew(self) -> crewai.Crew:
         return crewai.Crew(
             agents=[self.intent_analyzer()],
