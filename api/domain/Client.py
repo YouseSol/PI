@@ -10,10 +10,10 @@ class LoginForm(pydantic.BaseModel):
 class UserInfo(pydantic.BaseModel):
     first_name: str
     last_name: str
-    linkedin_account_id: str
     standard_message: str
 
 class RegisterForm(LoginForm, UserInfo):
+    linkedin_account_id: str
     pass
 
 class Client(UserInfo):
@@ -22,6 +22,7 @@ class Client(UserInfo):
     token: str
 
 class SystemClient(Client):
+    linkedin_account_id: str
     hash: str
 
     token: str

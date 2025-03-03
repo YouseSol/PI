@@ -9,7 +9,7 @@ from api.thirdparty.connector import get_unipile
 from api.persistence.connector import get_redis_db
 
 from api.domain.Client import Client
-from api.domain.Campaign import Campaign
+from api.domain.Campaign import Campaign, SystemCampaign
 from api.domain.Lead import Lead, SystemLead
 from api.domain.FailedLead import FailedLead
 
@@ -29,28 +29,28 @@ logger = logging.getLogger(__name__)
 
 router = fastapi.APIRouter(prefix="/campaign", tags=[ "Campaigns" ])
 
-@router.post("/from-file/{campaign_name}")
-async def post(campaign_name: str,
+@router.post("/from-file/{name}")
+async def post(name: str,
                file: fastapi.UploadFile,
                pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()],
                background_tasks: fastapi.BackgroundTasks):
     client = ClientController.get_by_api_token(api_token=pi_api_token)
 
-    if CampaignController.exists(client=client, name=campaign_name):
+    if CampaignController.exists(client=client, name=name):
         raise fastapi.exceptions.HTTPException(status_code=409, detail="Already exists campaign with that name.")
 
     _bytes = file.file.read()
 
     validate_campaing_file(_bytes)
 
-    background_tasks.add_task(insert_campaign, file=_bytes, campaign_name=campaign_name, api_token=pi_api_token)
+    background_tasks.add_task(insert_campaign, file=_bytes, name=name, api_token=pi_api_token)
 
-def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
+def insert_campaign(name: str, file: bytes, api_token: pydantic.UUID4):
     redis_db = get_redis_db()
 
     client = ClientController.get_by_api_token(api_token=api_token)
 
-    campaign = CampaignController.save(campaign=Campaign(owner=client.email, name=campaign_name, created_at=dt.datetime.now(), active=True))
+    campaign = CampaignController.save(campaign=SystemCampaign(owner=client.email, name=name, created_at=dt.datetime.now(), active=True))
 
     unipile_cfg: dict = AppConfig["Unipile"]
 
@@ -91,7 +91,7 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
         lead_account_id = lead_linkedin_url.split("/")[-1]
 
         try:
-            # INFO: This call can fail and we dont know why. Occured for a specific profile. Maybe privace involved.
+            # INFO: This call can fail and we dont know why. Occured for a specific profile. Maybe privace involved or deleted profile.
             lead_linkedin_profile: dict = extract_data_from_unipile_retrieve_profile(
                 linkedin_profile=unipile.retrieve_profile(account_retrieving=client.linkedin_account_id, account_id=lead_account_id)
             )
@@ -124,16 +124,16 @@ def insert_campaign(campaign_name: str, file: bytes, api_token: pydantic.UUID4):
 
     Controller.save()
 
-    subject = f"Prospector Inteligente - Campanha carregada com sucesso: '{campaign_name}'."
-    body = f"Todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}' foram carregados com sucesso.\n"
+    subject = f"Prospector Inteligente - Campanha carregada com sucesso: '{name}'."
+    body = f"Todos os contatos da campanha: '{name}' do perfil '{client.first_name} {client.last_name}' foram carregados com sucesso.\n"
 
     if failed_leads:
-        subject = f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{campaign_name}'."
+        subject = f"Prospector Inteligente - Falha ao carregar alguns contatos da campanha: '{name}'."
         body = "Mensagem automática:\n" \
-              f"Não foi possível carregar todos os contatos da campanha: '{campaign_name}' do perfil '{client.first_name} {client.last_name}'.\n" \
-              + f"\nNo total foram carregados {100.0 * (1.0 - (len(failed_leads) / len(rows)))}% de todos os contatos.\n" \
-              + "Os seguintes falharam:\n" \
-              + '\n'.join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ])
+              f"Não foi possível carregar todos os contatos da campanha: '{name}' do perfil '{client.first_name} {client.last_name}'.\n" \
+              f"\nNo total foram carregados {100.0 * (1.0 - (len(failed_leads) / len(rows)))}% de todos os contatos.\n" \
+               "Os seguintes falharam:\n" \
+               "\n".join([ f"{i + 1}) Nome: '{l.first_name} {l.last_name}' / Perfil: '{l.profile_url}'" for i, l in enumerate(failed_leads) ])
 
     ContactController.send_email_to_client(subject=subject,body=body, client=client)
 

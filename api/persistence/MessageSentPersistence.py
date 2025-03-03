@@ -75,3 +75,25 @@ class MessageSentPersistence(object):
             db.rollback()
 
             raise
+
+    @classmethod
+    def exist(cls, lead: SystemLead, message_id: str) -> bool:
+        db = get_postgres_db()
+
+        try:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    '''
+                    SELECT 1 AS exist FROM PI.MessageSent m
+                    WHERE m.lead = %s AND m.id = %s
+                    ''',
+                    (lead.id, message_id)
+                )
+
+                data: dict = cursor.fetchone()
+
+                return not data is None
+        except psycopg2.DatabaseError as e:
+            db.rollback()
+
+            raise

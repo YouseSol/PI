@@ -20,12 +20,16 @@ class ClientController(object):
         return ClientPersistence.login(form=form)
 
     @classmethod
+    def update_password(cls, client: SystemClient, password: str) -> SystemClient:
+        return ClientPersistence.update_password(client=client, password=password)
+
+    @classmethod
     def is_api_token_valid(cls, api_token: pydantic.UUID4) -> bool:
         return ClientPersistence.is_api_token_valid(api_token=api_token)
 
     @classmethod
-    def get(cls, email: str) -> SystemClient:
-        return ClientPersistence.get(email=email)
+    def get_by_email(cls, email: str) -> SystemClient:
+        return ClientPersistence.get_by_email(email=email)
 
     @classmethod
     def get_by_linkedin_account_id(cls, linkedin_account_id: str) -> SystemClient:
@@ -36,5 +40,5 @@ class ClientController(object):
         return ClientPersistence.get_by_api_token(api_token=api_token)
 
     @classmethod
-    def set_active(cls, api_token: pydantic.UUID4, active: bool):
-        ClientPersistence.set_active(api_token=api_token, active=active)
+    def set_active(cls, client: SystemClient, active: bool):
+        ClientPersistence.set_active(client=client, active=active)

@@ -24,7 +24,7 @@ async def activate(pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]) 
 
     system_client.active = True
 
-    ClientController.set_active(api_token=pi_api_token, active=True)
+    ClientController.set_active(client=system_client, active=True)
 
     Controller.save()
 
@@ -36,7 +36,7 @@ async def deactivate(pi_api_token: t.Annotated[pydantic.UUID4, fastapi.Header()]
 
     system_client.active = False
 
-    ClientController.set_active(api_token=pi_api_token, active=False)
+    ClientController.set_active(client=system_client, active=False)
 
     Controller.save()
 
