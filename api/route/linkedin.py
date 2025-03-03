@@ -35,6 +35,13 @@ async def answer_chat(chat: AnswerChatModel):
     if chat.lead.chat_id is None:
         raise APIException("Received an chat to answer without the 'chat_id' attribute.")
 
+    now = dt.datetime.now()
+    now_asp = dt.datetime.now(tz=dt.timezone(offset=dt.timedelta(hours=-3.0)))
+
+    if not chat.client.is_an_appropriate_time_to_answer():
+        logger.debug("Not answering chats out of comercial time.")
+        raise fastapi.HTTPException(418, detail="Not answering chats out of comercial time.")
+
     unipile = get_unipile()
 
     messages_in_chat = [
@@ -78,7 +85,7 @@ async def answer_chat(chat: AnswerChatModel):
 
     intent_analyzer_output = intent_analyzer_crew.kickoff().raw
 
-    if bool(intent_analyzer_output):
+    if intent_analyzer_output == "True":
         ContactController.send_email_to_client(
             client=chat.client,
             subject="[PI] Um lead gostaria de marcar uma reunião para conversar.",

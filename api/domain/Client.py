@@ -31,3 +31,7 @@ class SystemClient(Client):
 
     deleted: bool
     deleted_at: dt.datetime | None = None
+
+    def is_an_appropriate_time_to_answer(self) -> bool:
+        now = dt.datetime.now()
+        return now.hour >= 11 and now.hour < 22 # INFO: America/Sao_Paulo 8 - 18
