@@ -58,6 +58,23 @@ class ClientPersistence(object):
                 raise
 
     @classmethod
+    def update_password(cls, client: SystemClient, password: str) -> SystemClient:
+        db = get_postgres_db()
+
+        with db.cursor() as cursor:
+            cursor.execute(
+                "UPDATE PI.Client SET hash = %s WHERE email = %s AND deleted = false RETURNING *",
+                (generate_password_hash(password), client.email)
+            )
+
+            data: dict = cursor.fetchone()
+
+            if data is None:
+                raise APIException(message="Database failed to insert and return data.", context=dict(table="Client", operation="UPDATE"))
+
+            return SystemClient.model_validate(dict(data))
+
+    @classmethod
     def login(cls, form: LoginForm) -> SystemClient | None:
         db = get_postgres_db()
 
@@ -73,13 +90,13 @@ class ClientPersistence(object):
                 return SystemClient.model_validate(dict(data))
 
     @classmethod
-    def set_active(cls, api_token: pydantic.UUID4, active: bool) -> None:
+    def set_active(cls, client: SystemClient, active: bool) -> None:
         db = get_postgres_db()
 
         with db.cursor() as cursor:
             cursor.execute(
                 "UPDATE PI.Client SET active = %s WHERE token = %s AND deleted = false",
-                (active, api_token)
+                (active, client.token)
             )
 
     @classmethod
@@ -100,7 +117,7 @@ class ClientPersistence(object):
             return data["count"] == 1
 
     @classmethod
-    def get(cls, email: str) -> SystemClient:
+    def get_by_email(cls, email: str) -> SystemClient:
         db = get_postgres_db()
 
         with db.cursor() as cursor:
