@@ -173,19 +173,16 @@ def on_linkedin_message_event_from_unipile(event: dict):
 
     lead_linkedin_public_identifier = event["sender_linkedin_identifier"]
 
-    if not LeadController.is_a_valid_lead(owner=client.email, linkedin_public_identifier=lead_linkedin_public_identifier):
+    if not LeadController.is_a_valid_lead(client=client, linkedin_public_identifier=lead_linkedin_public_identifier):
         return
 
-    lead = LeadController.get_by_owner_and_linkedin_public_identifier(
-        owner=client.email,
-        linkedin_public_identifier=lead_linkedin_public_identifier
-    )
+    lead = LeadController.get_by_linkedin_public_identifier(client=client, linkedin_public_identifier=lead_linkedin_public_identifier)
 
     lead.chat_id = event["chat_id"]
 
     LeadController.save(lead=lead)
 
-    campaign = CampaignController.get_by_id(owner=client.email, id=lead.campaign)
+    campaign = CampaignController.get_by_id(client=client, id=lead.campaign)
 
     if not campaign.active:
         return
@@ -281,9 +278,8 @@ def mark_chat_to_be_answered(client: SystemClient, lead: SystemLead, datetime: d
             return
 
     client_d = client.model_dump()
-    client_d.pop("created_at") # INFO: DateTime is not JSONSerializable. Do not work with json.dumps
 
     value = dict(client=client_d, lead=lead.model_dump(), timestamp=datetime.timestamp())
 
-    if not redis_db.set(key, json.dumps(value)):
+    if not redis_db.set(key, json.dumps(value, default=str)):
         raise APIException(f"Failed to add task into redis. Key: {key}", context=value)
