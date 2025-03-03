@@ -2,8 +2,10 @@ import datetime as dt, json, logging
 
 import fastapi, pydantic
 
+from api.ai.answer import answer
 from api.controller.ContactController import ContactController
 from api.controller.LeadController import LeadController
+from api.domain.ChatAction import ChatStatus
 from appconfig import AppConfig
 
 from api.thirdparty.connector import get_unipile
@@ -76,16 +78,23 @@ async def answer_chat(chat: AnswerChatModel):
                       "The last message was sent by the agent or someone with access to the account answered before the agent.")
         return
 
-    # DISCUSSION: All the AI part should be a single call, that returns an object that say:
-    #  1. If it should answer or not to the message.
-    #  2. If it shoul deactivate lead and send email.
-    #  etc.
+    action = answer(client=chat.client, lead=chat.lead, chat_history=chat_history)
 
-    intent_analyzer_crew = IntentAnalyzerAgency(conversation_history=chat_history).crew()
+    if action.status == ChatStatus.NEED_INTERVENTION:
+        ContactController.send_email_to_client(
+            client=chat.client,
+            subject="[PI] Um lead precisa de intervenção do representante de vendas.",
+            body=f"Olá!\n"
+                 f"Você esta recebendo este email porque foi identificado que o lead '{chat.lead.first_name} {chat.lead.last_name}' "
+                 f"do perfil '{chat.client.first_name} {chat.client.last_name}' "
+                  "precisa da intervenção do representante de vendas."
+        )
 
-    intent_analyzer_output = intent_analyzer_crew.kickoff().raw
+        chat.lead.active = False
 
-    if intent_analyzer_output == "True":
+        LeadController.save(chat.lead)
+
+    if action.status == ChatStatus.WANT_TO_SCHEDULE_MEETING:
         ContactController.send_email_to_client(
             client=chat.client,
             subject="[PI] Um lead gostaria de marcar uma reunião para conversar.",
@@ -99,26 +108,12 @@ async def answer_chat(chat: AnswerChatModel):
 
         LeadController.save(chat.lead)
 
-        Controller.save()
+    if action.should_answer:
+        if action.message is None:
+            raise APIException("AI answered chat with None")
 
-        return
+        message_sent_data = unipile.send_message(chat_id=chat.lead.chat_id, text=action.message)
 
-    # BUG: When will the AI stop answering if the lead does not want to talk anymore?
-
-    outbound_sales_crew = OutboundSalesAgency(client=chat.client, lead=chat.lead, chat_history=chat_history).crew()
-    outbound_sales_output = outbound_sales_crew.kickoff().raw
-
-    logger.debug(f"Outbound Sales Message Generated:\n{outbound_sales_output}")
-
-    validation_crew = ValidationAgency(lead=chat.lead, message=outbound_sales_output).crew()
-    validation_output = validation_crew.kickoff().raw
-
-    logger.debug(f"Validation Message Generated:\n{validation_output}")
-
-    message = validation_output
-
-    message_sent_data = unipile.send_message(chat_id=chat.lead.chat_id, text=message)
-
-    MessageSentController.save(message_sent=MessageSent(id=message_sent_data["message_id"], lead=chat.lead.id, sent_at=dt.datetime.now()))
+        MessageSentController.save(message_sent=MessageSent(id=message_sent_data["message_id"], lead=chat.lead.id, sent_at=dt.datetime.now()))
 
     Controller.save()
