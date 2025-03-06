@@ -1,4 +1,4 @@
-import json, logging, time
+import datetime as dt, json, logging, time
 
 import smtplib
 import email.mime.multipart
@@ -49,6 +49,9 @@ def trigger_chat_answer():
         if response.ok:
             db.delete(task_key)
         else:
+            if response.status_code == 418:
+                continue
+
             message = f"Failed to answer chat: {response.status_code, response.reason}"
 
             logger.fatal(message)
