@@ -30,15 +30,15 @@ api = fastapi.FastAPI(title=AppConfig["Name"],
                       version="0.1.1")
 
 # # INFO: Necessary only for when developing UI.
-# import fastapi.middleware.cors
-#
-# api.add_middleware(
-#     fastapi.middleware.cors.CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-#     allow_credentials=True,
-# )
+import fastapi.middleware.cors
+
+api.add_middleware(
+    fastapi.middleware.cors.CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 @api.exception_handler(Exception)
 async def exception_handler(request: fastapi.Request, exc: Exception):
